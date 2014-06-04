@@ -1,22 +1,25 @@
 use <MCAD/boxes.scad>
 
 renderAssembled = false;
+//renderAssembled = true;
+showBuildPlatform = false;
+//showBuildPlatform = true;
 
 buildWidth = 50;
-buildHeight= 50;
 buildLength = 50;
+buildHeight= 50;
 
 projectileDiameter = 10;
+catapultWidth = 2/3 * projectileDiameter;
 catapultLength = 50;
 catapultThickness = 1.5;
 arm_angle = 45;
-play = 0.25;
+play = 0.20;
 
 baseOfHook = 42;
 
 
 margin = 2;
-catapultWidth = 2/3 * projectileDiameter;
 roundnessRadius = projectileDiameter/3;
 boxRoundness = roundnessRadius/3;
 fnroundnessRadius = 32;
@@ -34,22 +37,55 @@ lb = catapultLength - (2 * ys) - boxRoundness;
 baseWidth = max(15, catapultWidth * 1.4);
 baseLength = catapultLength * 1;
 baseThickness = catapultThickness * 1.5;
+baseRadius = 2;
+
+trayHeight = 22;
+trayAngle = 5;
 
 catapult();
+
+if(showBuildPlatform)
+	color([0.5,0.8,1])
+	translate([-buildWidth/2, -buildWidth/2, -1])
+	cube([buildWidth, buildLength, 1]);
 
 
 //------------------------- Modules --------------------------------------
 
 module catapult(){
+
+	function armTranslation()
+		= renderAssembled ?
+		[baseWidth/2, baseLength - catapultThickness, catapultThickness/3] : [-10, 0, ];
+	function armRotation()
+		= renderAssembled ? [arm_angle + 90,0,0] : [0,0,0];
+	function armShift()
+		= renderAssembled ? [0,0,0] : [-1,0,1];
+
+
+	function trayTranslation() = renderAssembled ? [-2, 9, trayHeight-2] : [-28, 0, ];
+	function trayRotation() = renderAssembled ? [trayAngle,0,90] : [0,0,0];
+	function trayShift() = renderAssembled ? [0,0,0] : [-1,0,1];
+
+	translate([-baseWidth + buildWidth/2 - 5, -buildLength/2, 0])
 	union(){
+
+		translate(armTranslation())
+		rotate(armRotation())
+		arm(shift=armShift());
+
 		translate([0, 0, 0])
 		base(shift=[1,1,1]);
 
-		translate([baseWidth/2, 0, 0])
+		translate([baseWidth/2, 3, 0])
 		hook(shift=[0,-1,1]);
 
-		translate([0, 0, 0])
-		arm(shift=[0,1,1]);
+		translate([baseRadius, 10, 0])
+		ballLoader(shift=[-1,1,1]);
+
+		translate(trayTranslation())
+		rotate(trayRotation())
+		ballTray();
 	}
 }
 
@@ -59,7 +95,8 @@ module arm() {
 	translation = [catapultWidth/2, catapultLength/2, catapultThickness/2];
 
 	translate(hadamard(translation, shift))
-	translate([0,catapultLength/2,0])
+	translate([0,catapultLength - 8,0]) // TODO: replace hard-code with real values
+
 	difference() {
 		union () {
 			cylinder(r = outerHoleRadius, h = catapultThickness, center = true, $fn = fnroundnessRadius);
@@ -113,7 +150,7 @@ module base(){
 	difference() {
 		union () {
 			// Base
-			roundBox(baseWidth, baseLength, baseThickness, 2);
+			roundedBox([baseWidth, baseLength, baseThickness], 2, true, $fn = 50);
 
 			// Cylinder
 			translate([0, cylinderOffset, baseThickness/2])
@@ -126,7 +163,7 @@ module base(){
 		}
 
 		// Hole in base plate
-		roundBox(catapultWidth, baseHoleLength, baseThickness * 2, 2);
+		roundedBox([catapultWidth, baseHoleLength, baseThickness * 2], 2, true, $fn = 50);
 
 		// Slot for ball-holder
 		//translate([0, -catapultLength/2 + 5, 0])
@@ -139,6 +176,7 @@ module base(){
 			center=true);
 	}
 }
+
 
 module hook(normalize=false){
 
@@ -188,9 +226,55 @@ module hook(normalize=false){
 }
 
 module ballLoader(){
-	baseWidth = 10;
-	baseLength = 10;
-	baseHeight = 2;
+	baseWidth = 8;
+	baseLength = 8;
+	translation = [baseWidth/2, baseLength/2, baseThickness/2];
+
+	poleHeight = 22;
+
+	union(){
+		// Base
+		translate(hadamard(translation, shift))
+		roundedBox([baseWidth, baseLength, baseThickness], 2, true, $fn=40);
+
+		// Pole
+		translate([-baseWidth, baseLength/2 - 2, 0])
+		cube([2, 4, poleHeight]);
+	}
+}
+
+module ballTray (){
+
+	trayThickness = 2;
+	trayLength = projectileDiameter * 3 + trayThickness;
+	trayWidth = projectileDiameter;
+	translation = [0, 0, poleHeight];
+
+	translate(hadamard(translation, shift))
+	difference(){
+		union () {
+
+			cube([trayWidth, trayLength * 0.2, trayThickness]);
+
+			// Walls
+			translate([trayWidth, 0, 0])
+			rotate([0,-90,0])
+			cube([trayWidth/2, trayLength, trayThickness]);
+
+			translate([trayThickness, 0, 0])
+			rotate([0,-90,0])
+			cube([trayWidth/2, trayLength, trayThickness]);
+
+			translate([0, trayLength, 0])
+			rotate([90,0,0])
+			cube([trayWidth, trayWidth/2 + projectileDiameter/2, trayThickness]);
+
+		}
+
+		rotate([-trayAngle,0,0])
+		translate([projectileDiameter/2, 3, 0])
+		cube([4 + play, 2 + play, 10 + play], center=true);
+	}
 }
 
 
@@ -200,37 +284,6 @@ module roundedLink(xr, yr, rc, rt) {
 		polygon(points=[[0,0],[xr,yr],[0,yr]], paths=[[0,1,2]]);
 		translate([xr, yr, 0])
 		cylinder(r=rc, h=rt*1.2, center=true, $fn=fnroundnessRadius);
-	}
-}
-
-
-module roundBox(bw, bh, bt, rb) {
-	union () {
-		cube([(bw-2*rb)*1.05, (bh-2*rb)*1.05, bt], center=true);
-
-		translate([(bw-rb)/2, 0, 0])
-		cube([rb, bh-2*rb, bt], center=true);
-
-		translate([-(bw-rb)/2, 0, 0])
-		cube([rb, bh-2*rb, bt], center=true);
-
-		translate([0, -(bh-rb)/2, 0])
-		cube([bw-2*rb, rb, bt], center=true);
-
-		translate([0, (bh-rb)/2, 0])
-		cube([bw-2*rb, rb, bt], center=true);
-
-		translate([(-bw+2*rb)/2, (bh-2*rb)/2, 0])
-		cylinder(r=rb, h = bt, center=true, $fn=fnroundnessRadius);
-
-		translate([(bw-2*rb)/2, (bh-2*rb)/2, 0])
-		cylinder(r=rb, h = bt, center=true, $fn=fnroundnessRadius);
-
-		translate([(-bw+2*rb)/2, (-bh+2*rb)/2, 0])
-		cylinder(r=rb, h = bt, center=true, $fn=fnroundnessRadius);
-
-		translate([(bw-2*rb)/2, (-bh+2*rb)/2, 0])
-		cylinder(r=rb, h = bt, center=true, $fn=fnroundnessRadius);
 	}
 }
 
