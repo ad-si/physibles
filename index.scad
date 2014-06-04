@@ -42,6 +42,8 @@ baseRadius = 2;
 trayHeight = 22;
 trayAngle = 5;
 
+manifoldOffset = 1;
+
 catapult();
 
 if(showBuildPlatform)
@@ -137,7 +139,7 @@ module base(){
 	baseOffW = (buildArm ? baseWidth/2 + margin : 0);
 
 	cylinderRadius = baseThickness * 2;
-	cylinderOffset = baseLength/2 - cylinderRadius;
+	cylinderOffset = baseLength/2 - cylinderRadius - manifoldOffset/2;
 
 	baseHoleWidth = catapultWidth * 0.8;
 	baseHoleThickness = catapultThickness;
@@ -150,20 +152,21 @@ module base(){
 	difference() {
 		union () {
 			// Base
-			roundedBox([baseWidth, baseLength, baseThickness], 2, true, $fn = 50);
+			roundedBox([baseWidth, baseLength, baseThickness], boxRoundness, true, $fn = 50);
 
 			// Cylinder
 			translate([0, cylinderOffset, baseThickness/2])
 			rotate (90, [0, -1, 0])
 			difference() {
-				cylinder(r = cylinderRadius, h = baseWidth - 2, center = true);
+				cylinder(r = cylinderRadius, h = baseWidth - (2 * boxRoundness), center = true, $fn = 50);
+
 				translate([-baseThickness * 2, 0, 0])
-				cube([baseThickness * 4, baseThickness * 4, baseWidth * 1.5], center = true);
+				cube([(baseThickness * 4) - manifoldOffset, cylinderRadius * 2.1, baseWidth * 1.5], center = true);
 			}
 		}
 
 		// Hole in base plate
-		roundedBox([catapultWidth, baseHoleLength, baseThickness * 2], 2, true, $fn = 50);
+		roundedBox([catapultWidth, baseHoleLength, baseThickness * 2], boxRoundness, true, $fn = 50);
 
 		// Slot for ball-holder
 		//translate([0, -catapultLength/2 + 5, 0])
@@ -198,20 +201,21 @@ module hook(normalize=false){
 	union (){
 
 		// Pole
-		cube([poleWidth, poleLength, poleHeight], center=true);
+		translate([0,0,manifoldOffset/2])
+		cube([poleWidth, poleLength, poleHeight - manifoldOffset], center=true);
 
 		// Trigger
-		translate([poleWidth/2, -poleLength/2, poleHeight/2])
+		#translate([poleWidth/2, -poleLength/2 + (manifoldOffset * 0.01), poleHeight/2])
 		rotate ([180, 0, -90])
 		scale([3,1,2])
 		polyhedron(
 			points = [[0, 0, 5], [0, 4, 5], [0, 4, 0], [0, 0, 0], [2, 0, 0], [2, 4, 0]],
-			faces = [[0,3,2],  [0,2,1],  [4,0,5],  [5,0,1],  [5,2,4],  [4,2,3], [0,4,3], [1,5,2]],
+			faces = [[0,3,2],  [0,2,1],  [4,0,5],  [5,0,1],  [5,2,4],  [4,2,3], [0,4,3], [1,2,5]],
 			center=true
 		);
 
 		// Hook
-		translate([poleWidth/2, poleLength/2, poleHeight/2 - hookHeight])
+		#translate([poleWidth/2, poleLength/2 - (manifoldOffset * 0.01), poleHeight/2 - hookHeight])
 		rotate ([0,0,90])
 		polyhedron(
 			points = [
@@ -219,7 +223,7 @@ module hook(normalize=false){
 			],
 			faces = [
 			[0,3,2],  [0,2,1],  [4,0,5],  [5,0,1],  [5,2,4],  [4,2,3],
-			[0,4,3], [1,5,2]
+			[0,4,3], [1,2,5]
 			]
 		);
 	}
@@ -235,11 +239,11 @@ module ballLoader(){
 	union(){
 		// Base
 		translate(hadamard(translation, shift))
-		roundedBox([baseWidth, baseLength, baseThickness], 2, true, $fn=40);
+		roundedBox([baseWidth, baseLength, baseThickness], boxRoundness, true, $fn=40);
 
 		// Pole
-		translate([-baseWidth, baseLength/2 - 2, 0])
-		cube([2, 4, poleHeight]);
+		translate([-baseWidth + manifoldOffset, baseLength/2 - 2, manifoldOffset])
+		cube([2, 4, poleHeight - manifoldOffset]);
 	}
 }
 
@@ -254,7 +258,8 @@ module ballTray (){
 	difference(){
 		union () {
 
-			cube([trayWidth, trayLength * 0.2, trayThickness]);
+			translate([trayThickness/2, manifoldOffset * 0.01, manifoldOffset * 0.01])
+			cube([trayWidth - trayThickness, trayLength * 0.2, trayThickness]);
 
 			// Walls
 			translate([trayWidth, 0, 0])
@@ -265,9 +270,9 @@ module ballTray (){
 			rotate([0,-90,0])
 			cube([trayWidth/2, trayLength, trayThickness]);
 
-			translate([0, trayLength, 0])
+			translate([trayThickness/2, trayLength - manifoldOffset * 0.01, 0 - manifoldOffset * 0.01])
 			rotate([90,0,0])
-			cube([trayWidth, trayWidth/2 + projectileDiameter/2, trayThickness]);
+			cube([trayWidth - trayThickness, trayWidth/2 + projectileDiameter/2, trayThickness]);
 
 		}
 
