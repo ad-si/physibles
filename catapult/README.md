@@ -1,5 +1,5 @@
 # Catapult
 
-![Assembled](./img/assembledView.png)
+![Assembled](img/assembledView.png)
 
-![Print-layout](./img/printView.png)
+![Print-layout](img/printView.png)
