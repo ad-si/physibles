@@ -11,3 +11,8 @@ A collection of all the physibles I created.
 ## Boat
 
 ![Boat](boat/img/index.png)
+
+
+## Chess
+
+![Chess](chess/img/index.png)
