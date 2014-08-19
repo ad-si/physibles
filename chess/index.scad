@@ -27,6 +27,9 @@ setup = [
 [22, 23, 24, 26, 25, 24, 23, 22]
 ];
 
+
+//rook();
+
 chessboard();
 
 module pawn (x, y, color) {
@@ -37,15 +40,28 @@ module pawn (x, y, color) {
 	cylinder(d1 = edgeLength * 0.5, d2=20, h=height);
 }
 
-
 module rook (x, y, color) {
 	
 	height = 0.6 * maxHeight;
+	sizeVector = [edgeLength, edgeLength * 0.08, 10];
 	
 	translate([x, y, 0])
-	cylinder(d1 = edgeLength * 0.6, d2 = edgeLength * 0.5, h = height);
+	
+	
+	difference() {
+		cylinder(d1 = edgeLength * 0.6, d2 = edgeLength * 0.5, h = height);
+		
+		translate([0,0,height])
+		union(){
+			cube(size=sizeVector, center=true);
+			rotate([0,0,60])
+			cube(size=sizeVector, center=true);
+			rotate([0,0,120])
+			cube(size=sizeVector, center=true);
+			cylinder(d=edgeLength * 0.3, h = 10, center=true);
+		}
+	}
 }
-
 
 module knight (x, y, color) {
 	
@@ -78,6 +94,7 @@ module king (x, y, color) {
 	translate([x, y, 0])
 	cylinder(d1 = edgeLength * 0.6, d2 = edgeLength * 0.4, h = height);
 }
+
 
 module chessboard () {
 

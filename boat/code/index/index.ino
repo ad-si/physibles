@@ -246,5 +246,5 @@ void loop() {
 
 	calculateDirection(sensorNValue, sensorSWValue, sensorSEValue);
 
-	delay(1000);
+	delay(3000);
 }
