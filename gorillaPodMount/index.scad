@@ -1,4 +1,4 @@
-include <polyScrewThread_r1.scad>
+include <polyScrewThread.scad>
 
 $fn=50;
 
@@ -9,8 +9,9 @@ module gorillaPodMount () {
 	depthRange = [3.1, 2.7]; //TODO: Implement long slope
 	completeDepth = 6;
 	shortSlopeLength = 8.5;
-	shortSlopeAngle = 8;
+	shortSlopeAngle = 10;
 	shaftLength = 20;
+	shaftDiameter = 16;
 	
 	module adapterWithoutGap() {
 		
@@ -92,11 +93,11 @@ module gorillaPodMount () {
 
 	module thread () {
 
-		translate([17, 0, 0]){
+		translate([18, 0, 0]){
 			translate([0, 0, shaftLength + completeDepth])
-			screw_thread(15.5, 1.2, 45, 6, 1, 2);
+			screw_thread(shaftDiameter, 1.2, 55, 6, 1, 2);
 
-			cylinder(d=15, h=shaftLength + completeDepth);
+			cylinder(d=shaftDiameter, h=shaftLength + completeDepth);
 		}
 	}
 
