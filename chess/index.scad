@@ -107,61 +107,57 @@ module chessboard () {
 	
 	 for (x = [0:7]) {
  		for (y = [0:7]) {
-			assign(squareColor = ((x + y) % 2 == 0) ? [0,0,0,1] : [1,1,1,1]){
-				assign(
-					figureColor = ((setup[y][x] - 20) < 0) ?
-					[0.92,0.9,0.85,1] :
-					[0.2,0.15,0.1,1]
-				){
-					
-					color(squareColor)
-		 			square(x, y, edgeLength);
+			squareColor = ((x + y) % 2 == 0) ? [0,0,0,1] : [1,1,1,1];
+			figureColor = ((setup[y][x] - 20) < 0) ?
+                            [0.92, 0.9, 0.85, 1] :
+                            [0.2, 0.15, 0.1, 1];
 
-					color(figureColor)
-					
-					if (setup[y][x] % 10 == 1) {
-						pawn(
-							x * edgeLength + edgeLength/2,
-							y * edgeLength + edgeLength/2,
-							squareColor);
-					}
-					else if (setup[y][x] % 10 == 2) {
-						rook(
-							x * edgeLength + edgeLength/2,
-							y * edgeLength + edgeLength/2,
-							squareColor
-						);
-					}
-					else if (setup[y][x] % 10 == 3) {
-						knight(
-							x * edgeLength + edgeLength/2,
-							y * edgeLength + edgeLength/2,
-							squareColor
-						);
-					}
-					else if (setup[y][x] % 10 == 4) {
-						bishop(
-							x * edgeLength + edgeLength/2,
-							y * edgeLength + edgeLength/2,
-							squareColor
-						);
-					}
-					else if (setup[y][x] % 10 == 5) {
-						queen(
-							x * edgeLength + edgeLength/2,
-							y * edgeLength + edgeLength/2,
-							squareColor
-						);
-					}
-					else if (setup[y][x] % 10 == 6) {
-						king(
-							x * edgeLength + edgeLength/2,
-							y * edgeLength + edgeLength/2,
-							squareColor
-						);
-					}
-				}
-			}	
- 		}
- 	}
+            color(squareColor)
+            square(x, y, edgeLength);
+
+            color(figureColor)
+            
+            if (setup[y][x] % 10 == 1) {
+                pawn(
+                    x * edgeLength + edgeLength/2,
+                    y * edgeLength + edgeLength/2,
+                    squareColor);
+            }
+            else if (setup[y][x] % 10 == 2) {
+                rook(
+                    x * edgeLength + edgeLength/2,
+                    y * edgeLength + edgeLength/2,
+                    squareColor
+                );
+            }
+            else if (setup[y][x] % 10 == 3) {
+                knight(
+                    x * edgeLength + edgeLength/2,
+                    y * edgeLength + edgeLength/2,
+                    squareColor
+                );
+            }
+            else if (setup[y][x] % 10 == 4) {
+                bishop(
+                    x * edgeLength + edgeLength/2,
+                    y * edgeLength + edgeLength/2,
+                    squareColor
+                );
+            }
+            else if (setup[y][x] % 10 == 5) {
+                queen(
+                    x * edgeLength + edgeLength/2,
+                    y * edgeLength + edgeLength/2,
+                    squareColor
+                );
+            }
+            else if (setup[y][x] % 10 == 6) {
+                king(
+                    x * edgeLength + edgeLength/2,
+                    y * edgeLength + edgeLength/2,
+                    squareColor
+                );
+            }
+		}
+	}
 }
