@@ -3,21 +3,14 @@
 A collection of all the physibles I created.
 
 
-## Catapult
+Name | Image
+-----|-------
+[GorillaPodMount](./gorillaPodMount) | ![GorillaPodMount][gpmi]
+[Catapult](./catapult) | ![Catapult][catai]
+[Boat](./boat) | ![Boat][boati]
+[Chess](./chess) | ![Chess][chi]
 
-![Catapult](catapult/img/index.png)
-
-
-## Boat
-
-![Boat](boat/img/index.png)
-
-
-## Chess
-
-![Chess](chess/img/index.png)
-
-
-## GorillaPodMount
-
-![GorillaPodMount](gorillaPodMount/img/index.png)
+[boati]: ./boat/img/index.png
+[catai]: ./catapult/img/index.png
+[chi]: ./chess/img/index.png
+[gpmi]: ./gorillaPodMount/img/index.png
