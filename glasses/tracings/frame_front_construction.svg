@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="70.5mm"
+   height="40.9mm"
+   viewBox="0 0 200 116"
+   version="1.1"
+   id="svg12"
+   sodipodi:docname="frame_front.svg"
+   inkscape:version="1.0.1 (c497b03c, 2020-09-10)">
+  <metadata
+     id="metadata18">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs16" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1058"
+     id="namedview14"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:snap-global="false"
+     inkscape:zoom="2.2417836"
+     inkscape:cx="55.513197"
+     inkscape:cy="47.423593"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg12">
+    <sodipodi:guide
+       position="217.12785,101.74341"
+       orientation="0,-1"
+       id="guide907" />
+    <sodipodi:guide
+       position="117.72368,0.49042293"
+       orientation="0,-1"
+       id="guide909" />
+  </sodipodi:namedview>
+  <image
+     sodipodi:absref="/Users/adrian/Dropbox/Projects/physibles/glasses/front.png"
+     xlink:href="front.png"
+     transform="rotate(179.52644)"
+     y="-184.13631"
+     x="-207.56635"
+     id="image80"
+     preserveAspectRatio="none"
+     height="194.63988"
+     width="418.41565" />
+  <path
+     d="M 100,-0.75091345 C 74.897162,-1.1742663 50.983706,2.9739443 32.533313,7.0537094 23.775186,8.9903133 10.158,9.013 0,9.013 v 28.633 c 10.135,0 13.780965,4.837015 16.288,10.556 2.464965,5.623015 4.352059,11.786183 9.057456,24.344772 C 30.430838,86.11953 38.570042,103.65085 54.951,108.389 c 16.615042,4.80585 39.934538,6.89679 57.28454,7.12132 17.34499,0.22447 27.09682,-0.85507 36.90372,-2.87655 9.8071,-2.02152 17.8678,-3.47135 24.54091,-16.13026 9.21572,-17.482254 11.34899,-36.462027 13.8673,-54.189863 0.86951,-6.121021 6.1841,-8.608502 8.22514,-9.536422 2.16896,-0.98608 2.876,-1.236 3.138,-4.267 0.301,-3.482 0.35,-9.208 0.5,-12.015 0.15,-2.807 0.39394,-2.529719 -5.041,-3.706 C 188.90955,11.607506 178.21529,9.1597182 157.835,5.2290866 136.54736,1.1234595 119.29171,-0.42556374 100,-0.75091345 Z"
+     id="path10"
+     style="fill:#ff0000;fill-opacity:0.290323"
+     sodipodi:nodetypes="ssccsssssssssssss" />
+</svg>
