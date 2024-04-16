@@ -11,12 +11,14 @@ Name | Model | Photo
 [Snowflakes](./snowflakes) | ![Snowflakes][snowi] |
 [Boat](./boat) | ![Boat][boati] |
 [Chess](./chess) | ![Chess][chi] |
+[Progress Bar Clock](./progress-bar-clock) | ![Progress Bar Clock][pbc] |
 
 [boati]: ./boat/img/index.png
 [catai]: ./catapult/img/index.png
-[kini]: ./kinect-mount/img/index.png
-[kinp]: ./kinect-mount/img/photo.jpeg
-[snowi]: ./snowflakes/img/index.png
 [chi]: ./chess/img/index.png
 [gli]: ./glasses/main.png
 [gpmi]: ./gorillaPodMount/img/index.png
+[kini]: ./kinect-mount/img/index.png
+[kinp]: ./kinect-mount/img/photo.jpeg
+[pbc]: ./progress-bar-clock/img/index.png
+[snowi]: ./snowflakes/img/index.png
