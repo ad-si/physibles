@@ -1,109 +1,118 @@
-include <polyScrewThread.scad>
+// This should be printed with following settings for better strength:
+// - Seam position: Nearest
+// - 5 walls
+// - 25% infill density
+// - honeycomb infill pattern
+// The screw thread might be to tight -> adjust `manualShaftCompensation`.
 
-$fn=50;
+include <poly_screw_thread_r1.scad>
 
-module gorillaPodMount () {
-	
-	height = 40;
-	width = 32;
-	depthRange = [3.1, 2.7]; //TODO: Implement long slope
-	completeDepth = 6;
-	shortSlopeLength = 8.5;
-	shortSlopeAngle = 10;
-	shaftLength = 20;
-	shaftDiameter = 16;
-	
-	module adapterWithoutGap() {
-		
-		module basePlate() {	
-			
-			module basePlateHalf(){
-				hull(){
-					polygon(
-						[[0,0],[height,0],[width,13.5],[30,14],[0,16]],
-						[[0,1,2,3,4]]
-					);
-				
-					// Corner ~~ (40, 11.5)
-					translate([36, 7.5])
-					circle(r=4);
-				}
-			}
-			
-			basePlateHalf();
-			
-			mirror([0,1,0])
-			basePlateHalf();
-		}
+$fn = 50;
 
-		module topPlate() {
-			module topPlateHalf () {
-				hull(){
-					polygon([[0,0],[40,0],[0,11.5]], [[0,1,2]]);
-					
-					// Corner ~~ (40,8)
-					translate([35,3])
-					circle(r=5);
-				}
-			}
-			
-			topPlateHalf();
-			
-			mirror([0,1,0]) {
-				topPlateHalf();
-			}
-		}
+module gorillaPodMount() {
+  length = 40;
+  widthBase = 33;
+  widthTip = 27;
+  depthRange = [ 3.1, 2.7 ]; // TODO: Implement long slope
+  completeDepth = 6;
+  shortSlopeLength = 8.5;
+  shortSlopeAngle = 12;
+  shaftLength = 10;
+  shaftDiameter = 15.875; // 5/8 inch
 
-		difference() {
-			linear_extrude(height = depthRange[1])
-			basePlate();
+  module adapterWithoutGap() {
+    module basePlate() {
+      module basePlateHalf() {
+        union() {
+          hull() {
+            polygon([
+              [ 0, 0 ], [ length, 0 ], //
+              [ length - 8, widthTip / 2 ], [ 0, widthTip / 2 ]
+            ]);
 
-			// Subtract short slope in the front
-			translate([height - shortSlopeLength, -width/2, depthRange[1]])
-			rotate([0, shortSlopeAngle, 0])
-			cube(size=[20, width, depthRange[1]], center=false);
-		}
+            // Corner ~~ (length, 11.5)
+            translate([ length - 4, 7.5 ]) circle(r = 4);
+          }
 
-		linear_extrude(height = completeDepth)
-		topPlate();
-	}
+          polygon([
+            [ 0, 0 ], [ length, 0 ], //
+            [ length - 11, (widthTip / 2) ], [ 0, widthBase / 2 ]
+          ]);
+        }
+      }
 
-	module bottomGap() {
-		translate([0,5,0])
-		rotate([90,0,0])
-		linear_extrude(height=10)
-		polygon(
-			[
-				[39, -1],
-				[39, 0],
-				[38.5, 3],
-				[34, 0],
-				[34, -1]
-			],
-			[[0,1,2,3,4]
-		]);
-	}
+      basePlateHalf();
 
-	module gorillapodAdapter() {
-		difference() {
-			adapterWithoutGap();
-			bottomGap();
-		}
-	}
+      mirror([ 0, 1, 0 ]) basePlateHalf();
+    }
 
-	module thread () {
+    module topPlate() {
+      module topPlateHalf() {
+        hull() {
+          polygon([ [ 0, 0 ], [ length, 0 ], [ 0, 12 ] ]);
 
-		translate([18, 0, 0]){
-			translate([0, 0, shaftLength + completeDepth])
-			screw_thread(shaftDiameter, 1.2, 55, 6, 1, 2);
+          // Corner ~~ (length, 8)
+          translate([ length - 5, 3.5 ]) circle(r = 5);
+        }
+      }
 
-			cylinder(d=shaftDiameter, h=shaftLength + completeDepth);
-		}
-	}
+      topPlateHalf();
 
+      mirror([ 0, 1, 0 ]) { topPlateHalf(); }
+    }
 
-	gorillapodAdapter();
-	thread();
+    difference() {
+      linear_extrude(depthRange[1]) basePlate();
+
+      // Subtract short slope in the front
+      translate([ length - shortSlopeLength, -widthBase / 2, depthRange[1] ])
+          rotate([ 0, shortSlopeAngle, 0 ])
+              cube(size = [ 20, widthBase, depthRange[1] ], center = false);
+    }
+
+    linear_extrude(completeDepth) topPlate();
+  }
+
+  module bottomGap() {
+    translate([ 0, 5, 0 ])   //
+        rotate([ 90, 0, 0 ]) //
+        linear_extrude(10)   //
+        polygon(
+            [[length - 1, -1], [length - 1, 0], [length - 1.5, 3],
+             [length - 6, 0], [length - 6, -1]]
+        );
+  }
+
+  module gorillapodAdapter() {
+    difference() {
+      adapterWithoutGap();
+      bottomGap();
+    }
+  }
+
+  module thread() {
+    translate([ 18, 0, 0 ]) {
+      translate([ 0, 0, shaftLength + completeDepth ]) //
+          screw_thread(
+              shaftDiameter, // ~15.875 mm = 5/8 inch
+              0.94,          // 27 threads/inch
+              60,            // Standard for UNC/UNS threads
+              8,             // Thread length
+              1,             // Standard symmetry for threads
+              2              // Common chamfer style
+          );
+
+      cylinder(d = shaftDiameter, h = shaftLength + completeDepth);
+    }
+  }
+
+  // Cut off 2 mm from the end to make it protrude less
+  difference() {
+    gorillapodAdapter();
+    translate([ -3, 0, 0 ])
+        cube(size = [ 10, widthBase * 2, completeDepth * 3 ], center = true);
+  }
+  thread();
 }
 
 gorillaPodMount();
