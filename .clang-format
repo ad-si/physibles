@@ -1,0 +1,8 @@
+﻿---
+AlignAfterOpenBracket: BlockIndent
+IndentWidth: 2
+SortIncludes: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
+...
