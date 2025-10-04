@@ -13,6 +13,7 @@ Name | Photo
 [Glasses](./glasses) | ![Glasses][gli]
 [Gorilla Pod Mount](./gorilla_pod_mount) | ![gorilla_pod_mount][gpmi]
 [Leg Clip](./leg_clip) | ![Leg Clip][legi]
+[Medal](./medal) | ![Medal][mei]
 [Spring](./spring) | ![Spring][spi]
 [Toilet Spacer](./toilet_spacer) | ![Toilet Spacer][tosi]
 
@@ -24,6 +25,7 @@ Name | Photo
 [legi]: ./leg_clip/img/index.png
 [spi]: ./spring/img/index.png
 [tosi]: ./toilet_spacer/img/index.png
+[mei]: ./medal/img/index.png
 
 
 ## Laser Cut
