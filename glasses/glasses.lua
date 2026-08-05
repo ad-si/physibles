@@ -160,18 +160,33 @@ local frame_positioned = frame():translate(0, 0, frame_depth / 2)
 
 
 --// Temples
--- Reaching ~140 mm behind the front of the frame,
--- splaying outwards and bending down behind the ear
-local temple_reach = 140 -- From the front of the frame to the tip
-local temple_shaft_splay = 2 -- How far the shaft drifts outwards
+-- Reaching ~149 mm behind the front of the frame,
+-- splaying outwards, curving back in around the head,
+-- drooping down towards the body
+-- and bending down behind the ear.
+-- Lengthened over the traced original,
+-- half of it on the shaft and half on the tip
+local temple_extension = 10
+local temple_shaft_splay = 2 -- Initial outward drift away from the head
+-- How far the temple curves back inwards around the head.
+-- Applied quadratically over the whole length, so the temple
+-- leaves the frame with the splay and curves in evenly,
+-- without a kink where the ear bend starts.
+-- The tip ends up `temple_wrap - temple_shaft_splay` inside the frame edge.
+local temple_wrap = 7
+-- How far the temple droops down towards the body,
+-- on top of the drop of the ear bend.
+-- Applied quadratically over the whole length like the wrap,
+-- so the temple leaves the frame level and curves down evenly.
+local temple_droop = 6
 -- Outer face of the temples, flush with the outer edge of the frame
 local temple_outer_x = frame_half_width - 0.4
 -- Top face of the temples, flush with the top edge of the frame's end
 local temple_top_y = 16
 local temple_bend_radius = 25
 local temple_bend_angle = 40
-local temple_bend_hook = 3 -- How far the bend drifts inwards
-local temple_tip_length = 32 -- Straight part behind the bend
+-- Straight part behind the bend
+local temple_tip_length = 32 + temple_extension / 2
 -- Rounded off end of the tip: distance from the end, width and height
 local temple_tip_rounding = {
   { 4.0, 3.0, 6.0 },
@@ -182,6 +197,11 @@ local temple_tip_rounding = {
 local temple_corner_radius = 1 -- Rounding of the rectangular profile
 local temple_fit_clearance = 0.15 -- Gap for the glue in the hinge pocket
 
+-- From the front of the frame to the tip.
+-- The tip's share of the extension is foreshortened by the bend.
+local temple_reach = 140 + temple_extension / 2
+  + temple_extension / 2 * math.cos(math.rad(temple_bend_angle))
+
 local temple_bend_length = temple_bend_radius * math.rad(temple_bend_angle)
 -- Straight part from the frame to the bend, filling up the reach
 local temple_shaft_length = temple_reach
@@ -191,8 +211,10 @@ local temple_shaft_length = temple_reach
 local temple_length = temple_shaft_length
   + temple_bend_length
   + temple_tip_length
+-- Direction in which the temple leaves the frame,
+-- before the wrap curves it back inwards
 local temple_yaw =
-  -math.deg(math.atan(temple_shaft_splay / temple_shaft_length))
+  -math.deg(math.atan(temple_shaft_splay / temple_length))
 
 -- Width (x) and height (y) of the temple at a fraction of its length.
 -- The first section covers the hinge pocket, behind it the width
@@ -256,13 +278,41 @@ end
 -- Cross section of the temple, as a flat cluster of spheres.
 -- Hulling two of them yields a segment with rounded edges.
 -- `outer_x` is the outer face, as the temple only tapers towards the face.
-local function temple_slice(fraction, pitch, outer_x, y, z)
+local function temple_slice(fraction, pitch, yaw, outer_x, y, z)
   local width = temple_section(fraction)
   local radius, offset_x, offset_y = temple_corners(fraction)
 
   return rounded_by(sphere { r = radius, fn = 24 }, offset_x, offset_y)
-    :rotate(pitch, temple_yaw, 0)
+    :rotate(pitch, yaw, 0)
     :translate(outer_x - width / 2, y, z)
+end
+
+
+-- Sideways drift of the wrap at a fraction of the temple's length
+local function temple_drift(fraction)
+  return temple_shaft_splay * fraction - temple_wrap * fraction ^ 2
+end
+
+
+-- Local direction of the wrapping temple at a fraction of its length
+local function temple_drift_yaw(fraction)
+  return -math.deg(math.atan(
+    (temple_shaft_splay - 2 * temple_wrap * fraction) / temple_length
+  ))
+end
+
+
+-- Downward droop of the temple at a fraction of its length,
+-- and the direction it points the temple in
+local function temple_droop_y(fraction)
+  return -temple_droop * fraction ^ 2
+end
+
+
+local function temple_droop_pitch(fraction)
+  return -math.deg(math.atan(
+    2 * temple_droop * fraction / temple_length
+  ))
 end
 
 
@@ -272,9 +322,10 @@ local function temple_station(distance)
 
   if distance <= temple_shaft_length then
     return fraction,
-      0,
-      temple_outer_x + temple_shaft_splay * (distance / temple_shaft_length),
-      temple_center_y(fraction),
+      temple_droop_pitch(fraction),
+      temple_drift_yaw(fraction),
+      temple_outer_x + temple_drift(fraction),
+      temple_center_y(fraction) + temple_droop_y(fraction),
       pocket_mouth_z - distance
   end
 
@@ -287,15 +338,13 @@ local function temple_station(distance)
 
   local drop = temple_bend_radius * (1 - math.cos(math.rad(angle)))
     + along_tip * math.sin(math.rad(angle))
-  -- Drifting inwards with the drop keeps the hook free of kinks
-  local full_drop = temple_bend_radius
-      * (1 - math.cos(math.rad(temple_bend_angle)))
-    + temple_tip_length * math.sin(math.rad(temple_bend_angle))
 
   return fraction,
-    -angle,
-    temple_outer_x + temple_shaft_splay - temple_bend_hook * (drop / full_drop),
-    temple_center_y(temple_shaft_length / temple_length) - drop,
+    -angle + temple_droop_pitch(fraction),
+    temple_drift_yaw(fraction),
+    temple_outer_x + temple_drift(fraction),
+    temple_center_y(temple_shaft_length / temple_length)
+      + temple_droop_y(fraction) - drop,
     pocket_mouth_z - temple_shaft_length
       - temple_bend_radius * math.sin(math.rad(angle))
       - along_tip * math.cos(math.rad(angle))
@@ -394,11 +443,13 @@ end
 -- as it is curved. The temples rest on their outer faces.
 local function print_layout()
   -- Packed tightly, so the print head doesn't have to travel far.
-  -- The temples are ~30 mm high, the frame reaches down to -20 mm.
+  -- The temples are ~40 mm high (droop plus ear bend),
+  -- the frame reaches down to -20 mm.
   local first_row = -40
-  local row_pitch = 34
+  local row_pitch = 43
 
-  -- Compensating the splay tilts the outer face flat onto the plate
+  -- Compensating the splay rests the front of the outer face on the plate.
+  -- The wrap lifts the rear, so the temples need supports there.
   local flat_temple = temple_right
     :translate(-temple_outer_x, 0, 0)
     :rotate(0, 90 - temple_yaw, 0)
