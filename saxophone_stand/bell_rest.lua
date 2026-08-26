@@ -1,7 +1,7 @@
 -- Bell rest for a saxophone stand (replacement part)
 --
 -- A C-shaped clip snaps onto the perforated main tube of the stand.
--- A fanned web connects it to a crescent-shaped arm
+-- Two struts fan out from its sides to a crescent-shaped arm
 -- (in the plane perpendicular to the tube, concave side facing away
 -- from the tube) which cradles the saxophone. A stub on the inside
 -- of the clip snaps into one of the holes in the tube
@@ -59,9 +59,12 @@ local arm_keel_edge_radius = 1 -- Rounding of the land's edges
 local arm_keel_height = 6 -- Where the V reaches the arm's full width
 local arm_side_radius = 1.5 -- Rounding where the V meets the sides
 
---// Web between clip and arm
+--// Webs between clip and arm: two struts, one per side, like the
+--// original part. The middle stays open.
 local web_thickness = 6
 local web_length = 8 -- From the clip's outer wall to the arm's concave face
+local web_clip_angle = 50 -- Around the clip, from the arm direction
+local web_arm_angle = 30 -- Along the arm's arc, from its middle
 
 local eps = 0.01 -- Used to prevent z-fighting
 
@@ -193,17 +196,46 @@ local function clip_stub()
 end
 
 
--- Fans out from (nearly) the full clip height to the arm's height.
--- Both ends sit on the floor, so the underside is flat and printable.
--- The arm end reaches the arm's center line, so the web stays fused
--- to the arm all the way down despite the arm's receding V faces.
+-- Two struts from the clip's flanks to the arm, symmetric about the
+-- arm direction. Each is a hull of a rounded column buried entirely
+-- in the clip wall (the bore cut trims any intrusion), so the strut's
+-- sloped top runs straight into the wall without a flat plateau,
+-- and one reaching the arm's center line, so it stays fused to the
+-- arm despite the arm's receding V faces. Both ends sit on the floor,
+-- so the undersides are flat and printable, while the tops fan from
+-- the clip's (nearly) full height down to the arm's.
 local function web()
-  return (
-    cube { 2, web_thickness, clip_height - 3, center = true }
-      :translate(clip_outer_radius - 1, 0, (clip_height - 3) / 2)
-    + cube { 2, web_thickness, arm_height - 2, center = true }
-        :translate(arm_mid_x - 1, 0, (arm_height - 2) / 2)
-  ):hull()
+  local function strut(side)
+    local around = math.rad(side * web_clip_angle)
+    local clip_r = clip_outer_radius - web_thickness / 2
+    local clip_x = clip_r * math.cos(around)
+    local clip_y = clip_r * math.sin(around)
+    local along = math.rad(side * web_arm_angle)
+    local arm_x = arc_center_x - arc_radius * math.cos(along)
+    local arm_y = arc_radius * math.sin(along)
+
+    -- The arm end tapers towards the floor, so the strut stays
+    -- inside the arm's V faces instead of poking through them
+    local taper_height = 3
+    local arm_column = cylinder {
+      h = taper_height,
+      r1 = web_thickness / 4,
+      r2 = web_thickness / 2,
+      fn = 48,
+    } + cylinder {
+      h = arm_height - 2 - taper_height,
+      r = web_thickness / 2,
+      fn = 48,
+    }:translate(0, 0, taper_height)
+
+    return (
+      cylinder { h = clip_height - 3, r = web_thickness / 2, fn = 48 }
+        :translate(clip_x, clip_y, 0)
+      + arm_column:translate(arm_x, arm_y, 0)
+    ):hull()
+  end
+
+  return strut(1) + strut(-1)
 end
 
 
