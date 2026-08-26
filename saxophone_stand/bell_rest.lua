@@ -14,7 +14,9 @@
 --
 -- All measures in mm
 
-local tube_diameter = 19
+-- The stand is a K&M 14300
+-- 20 mm is K&M's standard round tube
+local tube_diameter = 20
 local fit_clearance = 0.15 -- Per side, between tube and clip bore
 
 --// Clip
