@@ -34,8 +34,10 @@ local grip_bite = 0.8
 -- Arc over which the bite fades out towards the lip roots, so the
 -- inner face leaves the bore tangentially instead of with a step
 local bite_fade_angle = 15
-local tube_hole_diameter = 7 -- Holes in the stand's tube
-local stub_clearance = 0.5 -- Makes the stub slightly thinner than the holes
+local tube_hole_diameter = 7 -- Holes in the stand's tube, dimpled inwards
+local stub_protrusion = 6 -- How far the stub reaches into the bore
+local stub_base_radius = 4.2 -- Where the stub flares into the clip wall
+local stub_tip_radius = 1.6 -- Rounding of the stub's dome tip
 
 --// Crescent arm
 local arm_width = 13 -- Radial thickness of the crescent
@@ -149,14 +151,39 @@ local function clip()
 end
 
 
--- Dome-shaped stub on the inside of the clip
--- which snaps into one of the tube's holes.
--- A sphere centered exactly on the bore surface: one half protrudes
--- as a hemisphere, the other half is buried in the clip wall to anchor it.
+-- Bell-shaped stub on the inside of the clip which reaches through
+-- one of the tube's holes: a cosine bell that flares smoothly into
+-- the clip wall, necks down to slip through the hole, and ends in a
+-- dome inside the tube. The flare nests into the hole's punched dimple.
+-- Stacked cone segments (a union, not a hull) preserve the concave
+-- flare, and the gentle taper keeps the underside overhang printable
+-- with the clip axis vertical.
 local function clip_stub()
-  local radius = tube_hole_diameter / 2 - stub_clearance
-  return sphere { r = radius, fn = 48 }
-    :translate(bore_radius, 0, z_mid)
+  local embed = 1 -- Buried in the clip wall to close the seam to the bore
+  local length = stub_protrusion + embed - stub_tip_radius
+  local steps = 12
+
+  -- Radius along the stub, from the buried base (u = 0) to the dome
+  local function radius(u)
+    return stub_tip_radius
+      + (stub_base_radius - stub_tip_radius)
+        * (1 + math.cos(math.pi * u)) / 2
+  end
+
+  local stub = sphere { r = stub_tip_radius, fn = 48 }
+    :translate(0, 0, length)
+  for step = 0, steps - 1 do
+    stub = stub + cylinder {
+      h = length / steps + eps,
+      r1 = radius(step / steps),
+      r2 = radius((step + 1) / steps),
+      fn = 48,
+    }:translate(0, 0, step * length / steps)
+  end
+
+  return stub
+    :rotate(0, -90, 0)
+    :translate(bore_radius + embed, 0, z_mid)
 end
 
 
