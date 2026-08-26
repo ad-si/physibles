@@ -41,22 +41,22 @@ local stub_base_radius = 4.2 -- Where the stub flares into the clip wall
 local stub_tip_radius = 1.6 -- Rounding of the stub's dome tip
 
 --// Crescent arm
-local arm_width = 16 -- Radial thickness of the crescent
+local arm_width = 13 -- Radial thickness of the crescent
 local arm_height = 24 -- Along the tube axis
 local arm_corner_radius = 4.5 -- Rounding of the cross section
-local arc_radius = 60 -- Curvature of the crescent's center line
+local arc_radius = 50 -- Curvature of the crescent's center line
 local arc_angle = 60 -- Root-to-root span: 2 * 60 * sin(60/2) = 60
 -- Each tip continues tangentially into a tighter arc curling forward
 -- (away from the tube), forming two horns, so any bell rests on
 -- exactly those two points instead of nesting into the crescent
-local horn_radius = 14 -- Curvature of a horn's center line
-local horn_sweep = 65 -- Arc a horn adds beyond the crescent (degrees)
+local horn_radius = 10 -- Curvature of a horn's center line
+local horn_sweep = 50 -- Arc a horn adds beyond the crescent (degrees)
 -- Each horn ends in a round knob: a vertical cylinder of the arm's
 -- half width, its top edge rounded like the arm's top corners, so
 -- the nose is a perfect circle in plan view
 -- The underside is a V (a keel): a narrow land rests on the bed and
 -- two steep faces widen to the full arm width, so no supports are needed
-local arm_keel_width = 9 -- Flat land under the keel, at the full section
+local arm_keel_width = 7 -- Flat land under the keel, at the full section
 local arm_keel_edge_radius = 1 -- Rounding of the land's edges
 local arm_keel_height = 6 -- Where the V reaches the arm's full width
 local arm_side_radius = 1.5 -- Rounding where the V meets the sides
@@ -216,19 +216,11 @@ local function web()
     local arm_x = arc_center_x - arc_radius * math.cos(along)
     local arm_y = arc_radius * math.sin(along)
 
-    -- The arm end tapers towards the floor, so the strut stays
-    -- inside the arm's V faces instead of poking through them
-    local taper_height = 3
     local arm_column = cylinder {
-      h = taper_height,
-      r1 = web_thickness / 4,
-      r2 = web_thickness / 2,
-      fn = 48,
-    } + cylinder {
-      h = arm_height - 2 - taper_height,
+      h = arm_height - 2,
       r = web_thickness / 2,
       fn = 48,
-    }:translate(0, 0, taper_height)
+    }
 
     return (
       cylinder { h = clip_height - 3, r = web_thickness / 2, fn = 48 }
