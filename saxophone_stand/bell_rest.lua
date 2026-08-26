@@ -7,8 +7,8 @@
 -- of the clip snaps into one of the holes in the tube
 -- and keeps the rest from sliding down.
 --
--- Print with the clip axis vertical (as modeled),
--- with supports under the crescent arm.
+-- Print with the clip axis vertical (as modeled). The crescent arm
+-- and the web sit flat on the bed, so no supports are needed.
 --
 -- All measures in mm
 
@@ -52,6 +52,12 @@ local arm_tip_sections = {
   { 4.0, 11.0, 15.0 },
   { 8.0, arm_width, arm_height },
 }
+-- The underside is a V (a keel): a narrow land rests on the bed and
+-- two steep faces widen to the full arm width, so no supports are needed
+local arm_keel_width = 4 -- Flat land under the keel, at the full section
+local arm_keel_edge_radius = 1 -- Rounding of the land's edges
+local arm_keel_height = 6 -- Where the V reaches the arm's full width
+local arm_side_radius = 1.5 -- Rounding where the V meets the sides
 
 --// Web between clip and arm
 local web_thickness = 6
@@ -187,20 +193,25 @@ local function clip_stub()
 end
 
 
--- Fans out from (nearly) the full clip height to the arm's height
+-- Fans out from (nearly) the full clip height to the arm's height.
+-- Both ends sit on the floor, so the underside is flat and printable.
+-- The arm end reaches the arm's center line, so the web stays fused
+-- to the arm all the way down despite the arm's receding V faces.
 local function web()
   return (
     cube { 2, web_thickness, clip_height - 3, center = true }
-      :translate(clip_outer_radius - 1, 0, z_mid)
+      :translate(clip_outer_radius - 1, 0, (clip_height - 3) / 2)
     + cube { 2, web_thickness, arm_height - 2, center = true }
-        :translate(arm_mid_x - arm_width / 2 + 1, 0, z_mid)
+        :translate(arm_mid_x - 1, 0, (arm_height - 2) / 2)
   ):hull()
 end
 
 
--- Cross section of the arm at `theta` (degrees along the arc, 0 = middle),
--- as a flat cluster of corner spheres. Hulling two of them
--- yields a segment with rounded edges.
+-- Cross section of the arm at `theta` (degrees along the arc, 0 = middle).
+-- The section stands on the floor and is V-shaped at the bottom:
+-- a narrow keel land on the bed, steep V faces widening to the full
+-- width at `arm_keel_height`, vertical sides above, and rounded top
+-- corners. Hulling two sections yields a segment with these faces.
 local function arm_slice(theta, width, height)
   local radius = math.min(arm_corner_radius, width / 2, height / 2)
   local t = math.rad(theta)
@@ -209,14 +220,30 @@ local function arm_slice(theta, width, height)
   local rx, ry = -math.cos(t), math.sin(t)
   local px = arc_center_x + arc_radius * rx
   local py = arc_radius * ry
-  local offset_r = width / 2 - radius
-  local offset_z = height / 2 - radius
-  local corner = sphere { r = radius, fn = 32 }
 
-  return corner:translate(px + rx * offset_r, py + ry * offset_r, z_mid + offset_z)
-    + corner:translate(px + rx * offset_r, py + ry * offset_r, z_mid - offset_z)
-    + corner:translate(px - rx * offset_r, py - ry * offset_r, z_mid + offset_z)
-    + corner:translate(px - rx * offset_r, py - ry * offset_r, z_mid - offset_z)
+  -- The keel land shrinks with the section, so the tips stay V-shaped
+  local keel_width = arm_keel_width * width / arm_width
+  local keel_offset = math.max(0, keel_width / 2 - arm_keel_edge_radius)
+  local side_radius = math.min(arm_side_radius, radius)
+  local side_offset = width / 2 - side_radius
+  local side_z = math.min(arm_keel_height, height - side_radius)
+  local offset_r = width / 2 - radius
+
+  local top = sphere { r = radius, fn = 32 }:translate(0, 0, height - radius)
+  local side = sphere { r = side_radius, fn = 32 }:translate(0, 0, side_z)
+  local keel = cylinder {
+    h = arm_keel_edge_radius,
+    r = arm_keel_edge_radius,
+    fn = 32,
+  }
+
+  local function place(solid, offset)
+    return solid:translate(px + rx * offset, py + ry * offset, 0)
+  end
+
+  return place(top, offset_r) + place(top, -offset_r)
+    + place(side, side_offset) + place(side, -side_offset)
+    + place(keel, keel_offset) + place(keel, -keel_offset)
 end
 
 
