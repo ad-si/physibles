@@ -74,7 +74,7 @@ local corners = {
   -- edge, the perpendicular ledge under its bottom inner corner
   { 33.9363, -7.332, r = 3 },
   { 47.2264, 4.8077, r = 3 },
-  { 32.1784, 21.2818, r = 10 }, -- Tip of the middle prong
+  { 32.1784, 21.2818, r = 20 }, -- Tip of the middle prong
   { 8.8797, 0, r = 10 }, -- Back at the top edge, y = 0
 }
 
