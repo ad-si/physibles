@@ -8,6 +8,14 @@
 -- the strap behind it, and the flat back of the elbow has an obround
 -- slot for the cable. The strap tip is rounded across its width.
 --
+-- For 3d printing the mount is cut in two at the elbow, along the
+-- miter plane through both sharp corners: the "arm" (strap and dish)
+-- and the "connector" (tongue, base, and elbow wedge). Two dovetail
+-- keys on the arm's cut face run up the face's slope, mirrored about
+-- the middle; they slide into matching sockets in the connector from
+-- the elbow's outer side and stop at the sockets' closed lower ends,
+-- which stay buried below the front-side surface.
+--
 -- Recreated from the FreeCAD model (model.FCStd) in this directory.
 -- The tongue outline and its cross profile are traced from the OEM
 -- connector, hence the odd coordinates.
@@ -15,11 +23,14 @@
 -- All measures in mm
 
 -- "assembled": as mounted on the TV: the FreeCAD model's coordinates,
---   turned so the tongue points up
--- "print": lying on the strap's back, the side the through hole opens
---   to: the dish faces up and the elbow's back rises from the bed at
---   the sweep angle; only the tongue's hook details overhang steeply
+--   turned so the tongue points up; both parts joined
+-- "print": each part in its print orientation: the arm on the strap's
+--   back (the side the through hole opens to) with the dish facing up
+--   and the dovetail keys climbing the cut face; the connector on the
+--   elbow's broad back with the tongue's hooks facing up; the tongue's
+--   underside floats 4 mm above the bed and needs support
 local view = "print" -- "assembled" or "print"
+local part = "both" -- "arm", "connector", or "both"
 
 --// Tongue (the part inside the stand bar's slot)
 local tongue_width = 22 -- x
@@ -55,6 +66,19 @@ local hole_radius = 20 -- Through hole behind the dish, same center
 local slot_length = 13 -- Along y
 local slot_width = 7
 local slot_face_depth = 1.5 -- Slot's near side below the front face
+
+--// Dovetails joining the arm to the connector: two keys on the arm's
+--// cut face, running along the face's slope, mirrored about the middle
+local dovetail_depth = 4 -- Key height above the cut face, along its normal
+local dovetail_neck = 9 -- Key width at the cut face
+local dovetail_flare = 12 -- Degrees each flank leans outward
+local dovetail_spacing = 35 -- Center distance between the two keys
+-- Fraction of the thickness the keys span, measured from the elbow's
+-- back. What the remaining fraction leaves in front of the keys'
+-- lower ends must exceed depth plus clearance, or the sockets break
+-- through the front-side surface where the elbow's wedge runs out.
+local dovetail_span = 2 / 3
+local dovetail_clearance = 0.15 -- Socket is grown this much per side
 
 local eps = 0.01 -- Used to prevent z-fighting
 
@@ -252,29 +276,104 @@ local function arm()
 end
 
 
-local mount = tongue() + base() + arm()
+-- The cut at the elbow: the miter plane through the sharp inner and
+-- outer corner, bisecting the bend. Local frame: origin on the inner
+-- corner, x along the plane's normal towards the tongue, z along the
+-- cut face towards the outer corner, y across the width.
+local miter_x = back_x - arm_inner_radius * knee_tan -- Inner corner
+local miter_face = arm_thickness / math.cos(math.rad(arm_sweep / 2))
 
+local function miter_frame(solid)
+  return solid
+    :rotate(0, -arm_sweep / 2, 0)
+    :translate(miter_x, 0, 0)
+end
+
+-- Position along the face runs linearly from the front (inner corner)
+-- to the back of the thickness, so the keys start after the fraction
+-- they leave uncovered
+local dovetail_lift = (1 - dovetail_span) * miter_face
+
+-- The two dovetail key prisms, in the miter frame: the cross profile
+-- in the XY plane, extruded up the cut face from `dovetail_lift` and
+-- grown by `grow` on every side for the socket's clearance. The
+-- extrusion overshoots the outer corner, where the sockets are open
+-- for sliding the keys in; their lower ends stay closed and buried,
+-- stopping the keys.
+local function dovetail(grow)
+  local half_neck = dovetail_neck / 2 + grow
+  local depth = dovetail_depth + grow
+  local half_root = half_neck + depth * math.tan(math.rad(dovetail_flare))
+  local key = polygon { points = {
+    { -grow - eps, -half_neck },
+    { depth, -half_root },
+    { depth, half_root },
+    { -grow - eps, half_neck },
+  } }
+    :linear_extrude(miter_face - dovetail_lift + grow + 1)
+    :translate(0, 0, dovetail_lift - grow)
+  return key:translate(0, dovetail_spacing / 2, 0)
+    + key:translate(0, -dovetail_spacing / 2, 0)
+end
+
+local whole = tongue() + base() + arm()
+local tongue_side = miter_frame(
+  cube { { 300, 200, 400 } }:translate(0, -100, -200)
+)
+
+-- The keys are clipped to the whole mount, so their ends stay flush
+-- with its outer faces
+local arm_part = (whole - tongue_side) + (miter_frame(dovetail(0)) * whole)
+local connector_part = (whole * tongue_side)
+  - miter_frame(dovetail(dovetail_clearance))
+
+
+local mount
 if view == "print" then
-  -- Lay the strap's back face on the bed (the through hole opens to
-  -- it), lift it to the bed, and center the footprint on the plate.
+  -- Arm: lay the strap's back face on the bed (the through hole opens
+  -- to it), lift it to the bed, and center the footprint on the plate.
   -- `ax, az` is where the old x and z axes land on the new x axis;
-  -- the strap runs along +x, the tongue trails behind -x.
+  -- the strap runs along +x, the cut face trails behind -x.
   local ax = -math.cos(math.rad(arm_sweep))
   local az = -math.sin(math.rad(arm_sweep))
   local face_nx = math.cos(math.rad(arm_sweep - 90))
   local face_nz = math.sin(math.rad(arm_sweep - 90))
   local x_tip = tip_mid_x * ax + tip_mid_z * az
-  local x_tongue = tongue_width / 2 * ax + tongue_thickness * az
-  mount = mount
+  local x_cut = (back_x - (arm_inner_radius + arm_thickness) * knee_tan) * ax
+    + base_height * az
+  local arm_print = arm_part
     :rotate(0, arm_sweep + 180, 0)
     :translate(
-      -(x_tip + x_tongue) / 2,
+      -(x_tip + x_cut) / 2,
       0,
       arm_thickness / 2 - (tip_mid_x * face_nx + tip_mid_z * face_nz)
     )
+
+  -- Connector: flip it onto the elbow's broad back face (the sockets'
+  -- open ends land on the bed) and center the footprint, which runs
+  -- from the outer corner to the tongue's tip
+  local conn_back = (arm_inner_radius + arm_thickness) * knee_tan - back_x
+  local conn_print = connector_part
+    :rotate(0, 180, 0)
+    :translate(
+      -(conn_back - tongue_width / 2) / 2,
+      part == "both" and base_width + 10 or 0,
+      base_height
+    )
+
+  if part == "arm" then
+    mount = arm_print
+  elseif part == "connector" then
+    mount = conn_print
+  else
+    mount = arm_print + conn_print
+  end
 else
-  -- The part is modeled with the tongue along +x; turn it so the
+  -- The parts are modeled with the tongue along +x; turn them so the
   -- tongue points up
+  mount = (part == "arm" and arm_part)
+    or (part == "connector" and connector_part)
+    or (arm_part + connector_part)
   mount = mount:rotate(0, -90, 0)
 end
 
