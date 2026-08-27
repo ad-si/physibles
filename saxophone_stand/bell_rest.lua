@@ -21,7 +21,7 @@ local fit_clearance = 0.15 -- Per side, between tube and clip bore
 
 --// Clip
 local clip_wall = 3.2
-local clip_height = 26
+local clip_height = 22 -- Matches the web struts, just below the arm's top
 -- Opening of the C between the lip roots, measured at the tube center.
 -- The mouth itself is shaped by the lips: each continues the wall
 -- tangentially as an arc curving the other way (a smooth S), narrowing
@@ -202,12 +202,12 @@ end
 
 -- Two struts from the clip's flanks to the arm, symmetric about the
 -- arm direction. Each is a hull of a rounded column buried entirely
--- in the clip wall (the bore cut trims any intrusion), so the strut's
--- sloped top runs straight into the wall without a flat plateau,
--- and one reaching the arm's center line, so it stays fused to the
--- arm despite the arm's receding V faces. Both ends sit on the floor,
--- so the undersides are flat and printable, while the tops fan from
--- the clip's (nearly) full height down to the arm's.
+-- in the clip wall (the bore cut trims any intrusion), and one
+-- reaching the arm's center line, so it stays fused to the arm
+-- despite the arm's receding V faces. Both ends sit on the floor
+-- and share the clip's height, so the undersides are flat and
+-- printable and the tops are perfectly horizontal, flush with the
+-- clip's rim.
 local function web()
   local function strut(side)
     local around = math.rad(side * web_clip_angle)
@@ -218,16 +218,15 @@ local function web()
     local arm_x = arc_center_x - arc_radius * math.cos(along)
     local arm_y = arc_radius * math.sin(along)
 
-    local arm_column = cylinder {
-      h = arm_height - 2,
+    local column = cylinder {
+      h = clip_height,
       r = web_thickness / 2,
       fn = 48,
     }
 
     return (
-      cylinder { h = clip_height - 3, r = web_thickness / 2, fn = 48 }
-        :translate(clip_x, clip_y, 0)
-      + arm_column:translate(arm_x, arm_y, 0)
+      column:translate(clip_x, clip_y, 0)
+      + column:translate(arm_x, arm_y, 0)
     ):hull()
   end
 
