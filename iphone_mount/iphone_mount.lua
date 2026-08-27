@@ -35,6 +35,9 @@ local part = "both" -- "arm", "connector", or "both"
 --// Tongue (the part inside the stand bar's slot)
 local tongue_width = 22 -- x
 local tongue_thickness = 12 -- z
+-- The hooks' barbs protrude this much past the traced OEM shape, for
+-- a tighter fit in the bar's slot
+local hook_grow = 0.3
 
 --// Base block joining tongue and arm
 local base_depth = 10 -- x
@@ -82,6 +85,9 @@ local dovetail_clearance = 0.15 -- Socket is grown this much per side
 
 local eps = 0.01 -- Used to prevent z-fighting
 
+-- Lua 5.3 folded math.atan2 into math.atan; support both
+local atan2 = math.atan2 or math.atan
+
 --------------------------------------------------------------------------------
 
 local back_x = -(tongue_width / 2 + base_depth) -- Base's back face
@@ -123,6 +129,21 @@ end
 -- hook (120 degree corners) whose barb dips into the deepest point
 -- before rising to the front corner.
 local function tongue_outline()
+  -- The hook's arcs: the shoulder (a) where the ramp leaves the recess,
+  -- the barb tip (b), and the front corner (c). The barb center is
+  -- pushed out by `hook_grow`, and the tangent lines joining the arcs
+  -- are recomputed so the ramps stay tangent to it.
+  local ax, ay, ar = 6.2043, -24.2019, 0.3
+  local bx, by, br = 8.0194, -25.7458 - hook_grow, 0.5
+  local cx, cy, cr = 10.5, -23.7598, 0.5
+  -- Down ramp, tangent inside a and b: touches a at `down`, b opposite
+  local dx, dy = bx - ax, by - ay
+  local down = math.deg(
+    atan2(dy, dx) + math.acos((ar + br) / math.sqrt(dx * dx + dy * dy))
+  )
+  -- Up ramp, tangent outside b and c (equal radii): square to b -> c
+  local up = math.deg(atan2(cy - by, cx - bx)) + 270
+
   local pts = {}
   add(pts, -11, 0)
   add(pts, -11, -25.2481)
@@ -134,12 +155,10 @@ local function tongue_outline()
   arc_to(pts, 3.8557, -23.4981, 0.25, 90, 30)
   add(pts, 4.3053, -23.7769)
   arc_to(pts, 4.5218, -23.6519, 0.25, 210, 270)
-  add(pts, 6.2043, -23.9019)
-  arc_to(pts, 6.2043, -24.2019, 0.3, 90, 30)
-  add(pts, 7.5864, -25.9958)
-  arc_to(pts, 8.0194, -25.7458, 0.5, 210, 308.69)
-  add(pts, 10.8125, -24.1501)
-  arc_to(pts, 10.5, -23.7598, 0.5, 308.69, 360)
+  add(pts, ax, -23.9019)
+  arc_to(pts, ax, ay, ar, 90, down)
+  arc_to(pts, bx, by, br, down + 180, up)
+  arc_to(pts, cx, cy, cr, up, 360)
   add(pts, 11, -23.7598)
   add(pts, 11, 0)
   for i = #pts - 1, 2, -1 do
