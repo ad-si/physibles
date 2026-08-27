@@ -5,8 +5,8 @@
 -- slot in the stand bar. A block joins the tongue to an arm that bends
 -- 60 degrees and continues as a straight strap. The strap's front face
 -- carries a round dish sized for a MagSafe puck, with a hole through
--- the strap behind it, and the curved back has an obround slot for the
--- cable. The strap tip is rounded across its width.
+-- the strap behind it, and the flat back of the elbow has an obround
+-- slot for the cable. The strap tip is rounded across its width.
 --
 -- Recreated from the FreeCAD model (model.FCStd) in this directory.
 -- The tongue outline and its cross profile are traced from the OEM
@@ -17,9 +17,8 @@
 -- "assembled": as mounted on the TV: the FreeCAD model's coordinates,
 --   turned so the tongue points up
 -- "print": lying on the strap's back, the side the through hole opens
---   to: the dish faces up and the bend leaves the bed tangentially, so
---   the arm prints without support; only the tongue's hook details
---   overhang steeply
+--   to: the dish faces up and the elbow's back rises from the bed at
+--   the sweep angle; only the tongue's hook details overhang steeply
 local view = "print" -- "assembled" or "print"
 
 --// Tongue (the part inside the stand bar's slot)
@@ -31,13 +30,15 @@ local base_depth = 20 -- x
 local base_width = 70 -- y, also the arm's width
 local base_height = 16 -- z, also the arm strap's thickness
 
---// Arm: a 60 degree bend off the base's back face, then a straight
+--// Arm: a sharp 60 degree elbow off the base's back, then a straight
 --// strap, in the XZ plane, extruded over the full base width
-local arm_sweep = 60 -- Degrees of bend before the straight strap
-local arm_inner_radius = 21.5 -- Of the bend's concave side
+local arm_sweep = 60 -- Degrees of bend at the elbow
+-- Of the FreeCAD model's bend, whose fillets are removed here; kept to
+-- place the strap (and thus the tip) where that model had it
+local arm_inner_radius = 21.5
 local arm_thickness = base_height
--- From the end of the bend to the tip. The original sketch left this
--- unconstrained; the value is measured from it.
+-- From the end of the FreeCAD model's bend to the tip. The original
+-- sketch left this unconstrained; the value is measured from it.
 local strap_length = 80.152
 local tip_fillet_radius = 34.99 -- Rounds the tip across the width
 
@@ -49,7 +50,7 @@ local hole_radius = 20 -- Through hole behind the dish, same center
 
 --// Cable channel: an obround cut parallel to the strap, starting
 --// inside the through hole and running up inside the strap, emerging
---// through the bend's curved back. The cable enters it via the hole.
+--// through the elbow's flat back. The cable enters it via the hole.
 local slot_length = 13 -- Along y
 local slot_width = 7
 local slot_face_depth = 1.5 -- Slot's near side below the front face
@@ -154,10 +155,13 @@ local function base()
 end
 
 
--- Arm layout in the XZ plane. The bend's inner arc springs from the
--- base's bottom back corner and curves through `arm_sweep`; the strap
--- continues tangentially. The tip cap runs from the strap's inner to
--- its outer corner, perpendicular to the strap.
+-- Arm layout in the XZ plane. The strap lies where the FreeCAD
+-- model's filleted bend put it: tangent to an `arm_inner_radius` arc
+-- springing from the base's bottom back corner and sweeping
+-- `arm_sweep`. The fillets themselves are gone: the base's bottom and
+-- top planes run straight back and meet the strap's faces in sharp
+-- corners. The tip cap runs from the strap's inner to its outer
+-- corner, perpendicular to the strap.
 local bend_z = -arm_inner_radius
 local cap_angle = math.rad(90 + arm_sweep)
 local down_angle = math.rad(180 + arm_sweep) -- Down along the strap
@@ -170,16 +174,19 @@ local tip_outer_z = tip_inner_z + arm_thickness * math.sin(cap_angle)
 local tip_mid_x = (tip_inner_x + tip_outer_x) / 2
 local tip_mid_z = (tip_inner_z + tip_outer_z) / 2
 
+-- The sharp corners sit where the tangent lines to each bend circle
+-- meet: `r * tan(arm_sweep / 2)` behind the tangency point
+local knee_tan = math.tan(math.rad(arm_sweep / 2))
+
 local function arm_profile()
-  local pts = {}
-  add(pts, back_x, base_height)
-  add(pts, back_x, 0)
-  arc_to(pts, back_x, bend_z, arm_inner_radius, 90, 90 + arm_sweep)
-  add(pts, tip_inner_x, tip_inner_z)
-  add(pts, tip_outer_x, tip_outer_z)
-  arc_to(pts, back_x, bend_z, arm_inner_radius + arm_thickness,
-    90 + arm_sweep, 90)
-  return close_outline(pts)
+  return {
+    { back_x, base_height },
+    { back_x, 0 },
+    { back_x - arm_inner_radius * knee_tan, 0 },
+    { tip_inner_x, tip_inner_z },
+    { tip_outer_x, tip_outer_z },
+    { back_x - (arm_inner_radius + arm_thickness) * knee_tan, base_height },
+  }
 end
 
 -- Place a cutter modeled in the strap's frame: origin at the center of
