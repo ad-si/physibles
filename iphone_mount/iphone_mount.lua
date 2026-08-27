@@ -1,0 +1,273 @@
+-- iPhone mount for a Samsung TV stand bar
+--
+-- Replaces one of the stand's two bar connectors (Samsung BN61-12322A,
+-- "STAND BAR OUT"): a flat tongue with hooked edges slides into the
+-- slot in the stand bar. A block joins the tongue to an arm that bends
+-- 60 degrees and continues as a straight strap. The strap's front face
+-- carries a round dish sized for a MagSafe puck, with a hole through
+-- the strap behind it, and the curved back has an obround slot for the
+-- cable. The strap tip is rounded across its width.
+--
+-- Recreated from the FreeCAD model (model.FCStd) in this directory.
+-- The tongue outline and its cross profile are traced from the OEM
+-- connector, hence the odd coordinates.
+--
+-- All measures in mm
+
+-- "assembled": as mounted on the TV: the FreeCAD model's coordinates,
+--   turned so the tongue points up
+-- "print": lying on the strap's back, the side the through hole opens
+--   to: the dish faces up and the bend leaves the bed tangentially, so
+--   the arm prints without support; only the tongue's hook details
+--   overhang steeply
+local view = "print" -- "assembled" or "print"
+
+--// Tongue (the part inside the stand bar's slot)
+local tongue_width = 22 -- x
+local tongue_thickness = 12 -- z
+
+--// Base block joining tongue and arm
+local base_depth = 20 -- x
+local base_width = 70 -- y, also the arm's width
+local base_height = 16 -- z, also the arm strap's thickness
+
+--// Arm: a 60 degree bend off the base's back face, then a straight
+--// strap, in the XZ plane, extruded over the full base width
+local arm_sweep = 60 -- Degrees of bend before the straight strap
+local arm_inner_radius = 21.5 -- Of the bend's concave side
+local arm_thickness = base_height
+-- From the end of the bend to the tip. The original sketch left this
+-- unconstrained; the value is measured from it.
+local strap_length = 80.152
+local tip_fillet_radius = 34.99 -- Rounds the tip across the width
+
+--// Dish for the MagSafe puck, sunk into the strap's front face
+local dish_radius = 30
+local dish_depth = 10
+local dish_tip_offset = 35 -- Dish center up from the tip, along the face
+local hole_radius = 20 -- Through hole behind the dish, same center
+
+--// Cable channel: an obround cut parallel to the strap, starting
+--// inside the through hole and running up inside the strap, emerging
+--// through the bend's curved back. The cable enters it via the hole.
+local slot_length = 13 -- Along y
+local slot_width = 7
+local slot_face_depth = 1.5 -- Slot's near side below the front face
+
+local eps = 0.01 -- Used to prevent z-fighting
+
+--------------------------------------------------------------------------------
+
+local back_x = -(tongue_width / 2 + base_depth) -- Base's back face
+
+-- Append a point, skipping consecutive duplicates
+local function add(pts, x, y)
+  local last = pts[#pts]
+  if last and math.abs(last[1] - x) < 1e-6 and math.abs(last[2] - y) < 1e-6 then
+    return
+  end
+  pts[#pts + 1] = { x, y }
+end
+
+-- Append an arc around (cx, cy) from angle a0 to a1 (degrees, signed
+-- direction), tessellated to a 0.005 mm sagitta
+local function arc_to(pts, cx, cy, r, a0, a1)
+  local step = math.deg(2 * math.acos(1 - math.min(1, 0.005 / r)))
+  local steps = math.max(1, math.ceil(math.abs(a1 - a0) / step))
+  for i = 0, steps do
+    local a = math.rad(a0 + (a1 - a0) * i / steps)
+    add(pts, cx + r * math.cos(a), cy + r * math.sin(a))
+  end
+end
+
+-- Drop a closing point that duplicates the first
+local function close_outline(pts)
+  local first, last = pts[1], pts[#pts]
+  if math.abs(first[1] - last[1]) < 1e-6
+    and math.abs(first[2] - last[2]) < 1e-6 then
+    pts[#pts] = nil
+  end
+  return pts
+end
+
+
+-- Outline of the tongue in the XY plane, traced from the OEM part.
+-- One half (y < 0) is listed; the other is mirrored. Walking from the
+-- back edge: the long straight flank, a small step, then the ramped
+-- hook (120 degree corners) whose barb dips into the deepest point
+-- before rising to the front corner.
+local function tongue_outline()
+  local pts = {}
+  add(pts, -11, 0)
+  add(pts, -11, -25.2481)
+  add(pts, -7.25, -25.2481)
+  arc_to(pts, -7.25, -24.9981, 0.25, -90, 0)
+  add(pts, -7, -23.4981)
+  arc_to(pts, -6.75, -23.4981, 0.25, 180, 90)
+  add(pts, 3.8557, -23.2481)
+  arc_to(pts, 3.8557, -23.4981, 0.25, 90, 30)
+  add(pts, 4.3053, -23.7769)
+  arc_to(pts, 4.5218, -23.6519, 0.25, 210, 270)
+  add(pts, 6.2043, -23.9019)
+  arc_to(pts, 6.2043, -24.2019, 0.3, 90, 30)
+  add(pts, 7.5864, -25.9958)
+  arc_to(pts, 8.0194, -25.7458, 0.5, 210, 308.69)
+  add(pts, 10.8125, -24.1501)
+  arc_to(pts, 10.5, -23.7598, 0.5, 308.69, 360)
+  add(pts, 11, -23.7598)
+  add(pts, 11, 0)
+  for i = #pts - 1, 2, -1 do
+    add(pts, pts[i][1], -pts[i][2])
+  end
+  return close_outline(pts)
+end
+
+
+-- The tongue: its outline extruded upright, intersected with the
+-- mating cross profile (in the YZ plane, extruded across) traced from
+-- the OEM part: a 12 high rail with 7 high wings past y = +-22, and a
+-- staggered channel through the middle (bottom notch and top notch on
+-- the same side, leaving a central bridge). The wings nominally reach
+-- y = +-28 and are clipped by the outline.
+local function tongue()
+  local plan = polygon { points = tongue_outline() }
+    :linear_extrude(tongue_thickness + 2 * eps)
+    :translate(0, 0, -eps)
+
+  local cross = polygon { points = {
+    { -22, 0 }, { 0, 0 }, { 0, 4 }, { 6, 4 }, { 6, 0 }, { 22, 0 },
+    { 22, 2.5 }, { 28, 2.5 }, { 28, 9.5 }, { 22, 9.5 }, { 22, 12 },
+    { 6, 12 }, { 6, 8 }, { 0, 8 }, { 0, 12 }, { -22, 12 },
+    { -22, 9.5 }, { -28, 9.5 }, { -28, 2.5 }, { -22, 2.5 },
+  } }
+    :linear_extrude(tongue_width + 2 * eps)
+    :rotate(90, 0, 90)
+    :translate(-tongue_width / 2 - eps, 0, 0)
+
+  return plan * cross
+end
+
+
+local function base()
+  return cube { { base_depth, base_width, base_height } }
+    :translate(back_x, -base_width / 2, 0)
+end
+
+
+-- Arm layout in the XZ plane. The bend's inner arc springs from the
+-- base's bottom back corner and curves through `arm_sweep`; the strap
+-- continues tangentially. The tip cap runs from the strap's inner to
+-- its outer corner, perpendicular to the strap.
+local bend_z = -arm_inner_radius
+local cap_angle = math.rad(90 + arm_sweep)
+local down_angle = math.rad(180 + arm_sweep) -- Down along the strap
+local tip_inner_x = back_x + arm_inner_radius * math.cos(cap_angle)
+  + strap_length * math.cos(down_angle)
+local tip_inner_z = bend_z + arm_inner_radius * math.sin(cap_angle)
+  + strap_length * math.sin(down_angle)
+local tip_outer_x = tip_inner_x + arm_thickness * math.cos(cap_angle)
+local tip_outer_z = tip_inner_z + arm_thickness * math.sin(cap_angle)
+local tip_mid_x = (tip_inner_x + tip_outer_x) / 2
+local tip_mid_z = (tip_inner_z + tip_outer_z) / 2
+
+local function arm_profile()
+  local pts = {}
+  add(pts, back_x, base_height)
+  add(pts, back_x, 0)
+  arc_to(pts, back_x, bend_z, arm_inner_radius, 90, 90 + arm_sweep)
+  add(pts, tip_inner_x, tip_inner_z)
+  add(pts, tip_outer_x, tip_outer_z)
+  arc_to(pts, back_x, bend_z, arm_inner_radius + arm_thickness,
+    90 + arm_sweep, 90)
+  return close_outline(pts)
+end
+
+-- Place a cutter modeled in the strap's frame: origin at the center of
+-- the tip cap, x towards the front face (the face is at x = half the
+-- strap thickness), z up along the strap
+local function strap_frame(solid)
+  return solid
+    :rotate(0, 90 - arm_sweep, 0)
+    :translate(tip_mid_x, 0, tip_mid_z)
+end
+
+local function arm()
+  local half = arm_thickness / 2
+
+  local body = polygon { points = arm_profile() }
+    :linear_extrude(base_width)
+    :rotate(90, 0, 0)
+    :translate(0, base_width / 2, 0)
+
+  local dish = cylinder { h = dish_depth + eps, r = dish_radius, fn = 180 }
+    :rotate(0, -90, 0)
+    :translate(half + eps, 0, dish_tip_offset)
+
+  local hole = cylinder {
+    h = arm_thickness + 2 * eps,
+    r = hole_radius,
+    fn = 144,
+  }
+    :rotate(0, -90, 0)
+    :translate(half + eps, 0, dish_tip_offset)
+
+  -- The channel starts 50 up from the tip, safely inside the void the
+  -- hole and dish leave, and runs out through the top of the bend
+  local slot_reach = math.max(0, slot_length - slot_width) / 2
+  local slot_pin = cylinder { h = 200, r = slot_width / 2, fn = 48 }
+  local slot = (
+    slot_pin:translate(0, slot_reach, 0)
+    + slot_pin:translate(0, -slot_reach, 0)
+  )
+    :hull()
+    :translate(half - slot_face_depth - slot_width / 2, 0, 50)
+
+  -- Rounding the tip: at each side, cut the corner between the tip cap
+  -- and the side face down to a cylinder tangent to both
+  local function tip_corner(side)
+    local fr = tip_fillet_radius
+    local axis_y = side * (base_width / 2 - fr)
+    local block = cube { { 20, fr + eps, fr + eps } }
+      :translate(-10, side > 0 and axis_y or -base_width / 2 - eps, -eps)
+    local roll = cylinder { h = 20 + 2 * eps, r = fr, fn = 192 }
+      :rotate(0, 90, 0)
+      :translate(-10 - eps, axis_y, fr)
+    return block - roll
+  end
+
+  return body
+    - strap_frame(dish)
+    - strap_frame(hole)
+    - strap_frame(slot)
+    - strap_frame(tip_corner(1))
+    - strap_frame(tip_corner(-1))
+end
+
+
+local mount = tongue() + base() + arm()
+
+if view == "print" then
+  -- Lay the strap's back face on the bed (the through hole opens to
+  -- it), lift it to the bed, and center the footprint on the plate.
+  -- `ax, az` is where the old x and z axes land on the new x axis;
+  -- the strap runs along +x, the tongue trails behind -x.
+  local ax = -math.cos(math.rad(arm_sweep))
+  local az = -math.sin(math.rad(arm_sweep))
+  local face_nx = math.cos(math.rad(arm_sweep - 90))
+  local face_nz = math.sin(math.rad(arm_sweep - 90))
+  local x_tip = tip_mid_x * ax + tip_mid_z * az
+  local x_tongue = tongue_width / 2 * ax + tongue_thickness * az
+  mount = mount
+    :rotate(0, arm_sweep + 180, 0)
+    :translate(
+      -(x_tip + x_tongue) / 2,
+      0,
+      arm_thickness / 2 - (tip_mid_x * face_nx + tip_mid_z * face_nz)
+    )
+else
+  -- The part is modeled with the tongue along +x; turn it so the
+  -- tongue points up
+  mount = mount:rotate(0, -90, 0)
+end
+
+render(mount)
