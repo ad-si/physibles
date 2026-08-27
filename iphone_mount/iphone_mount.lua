@@ -26,7 +26,7 @@ local tongue_width = 22 -- x
 local tongue_thickness = 12 -- z
 
 --// Base block joining tongue and arm
-local base_depth = 20 -- x
+local base_depth = 10 -- x
 local base_width = 70 -- y, also the arm's width
 local base_height = 16 -- z, also the arm strap's thickness
 
