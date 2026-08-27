@@ -61,8 +61,8 @@ local corners = {
   { 28.9672, -30, r = 20 },
   { 63.1085, -64.222, r = 20 }, -- Bottom of the dip
   { 96.3473, -33.9726, r = 20 },
-  { 141.1944, -23.3373, r = 20 }, -- Outer end, below the finger
-  { 134, 7 }, -- Sharp tip of the end finger
+  { 135.3564, -24.7217, r = 20 }, -- Outer end, below the finger
+  { 128.162, 5.6156, r = 2 }, -- Tip of the end finger
   -- Stepped seat under the keyboard's bottom edge: main-body level,
   -- a 12.5 drop, then the thumb-cluster level
   { 112.2046, 1.8313, r = 2 },
