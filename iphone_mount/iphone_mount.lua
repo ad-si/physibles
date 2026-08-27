@@ -28,7 +28,7 @@
 --   back (the side the through hole opens to) with the dish facing up
 --   and the dovetail keys climbing the cut face; the connector on the
 --   elbow's broad back with the tongue's hooks facing up; the tongue's
---   underside floats 4 mm above the bed and needs support
+--   underside rests on the bed (only the wings overhang)
 local view = "print" -- "assembled" or "print"
 local part = "both" -- "arm", "connector", or "both"
 
@@ -39,7 +39,7 @@ local tongue_thickness = 12 -- z
 --// Base block joining tongue and arm
 local base_depth = 10 -- x
 local base_width = 70 -- y, also the arm's width
-local base_height = 16 -- z, also the arm strap's thickness
+local base_height = 14 -- z, also the arm strap's thickness
 
 --// Arm: a sharp 60 degree elbow off the base's back, then a straight
 --// strap, in the XZ plane, extruded over the full base width
@@ -170,7 +170,10 @@ local function tongue()
     :rotate(90, 0, 90)
     :translate(-tongue_width / 2 - eps, 0, 0)
 
-  return plan * cross
+  -- The tongue is 2 thinner than the base; align it with the base's
+  -- top so its underside rests on the bed in the connector's flipped
+  -- print orientation
+  return (plan * cross):translate(0, 0, base_height - tongue_thickness)
 end
 
 
