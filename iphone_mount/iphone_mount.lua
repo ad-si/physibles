@@ -37,9 +37,9 @@ local part = "both" -- "arm", "connector", or "both"
 --// Tongue (the part inside the stand bar's slot)
 local tongue_width = 22 -- x
 local tongue_thickness = 12 -- z
--- The hooks' barbs protrude this much past the traced OEM shape, for
--- a tighter fit in the bar's slot
-local hook_grow = 0.3
+-- The hooks' barbs are offset this much past the traced OEM shape
+-- (negative pulls them in), tuning the fit in the bar's slot
+local hook_grow = -0.1
 
 --// Base block joining tongue and arm
 local base_depth = 10 -- x
