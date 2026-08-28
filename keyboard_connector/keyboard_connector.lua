@@ -242,11 +242,13 @@ end
 local right = hinged(true)
 local left = hinged(false):mirror(1, 0, 0)
 
-local connector
+-- The pieces are rendered separately so they stay distinct objects
+-- in the export instead of merging into one mesh.
 if part == "half" then
-  connector = right
+  render(right)
 elseif part == "full" then
-  connector = right + left
+  render(right)
+  render(left)
 else
   -- The left piece, shifted back into positive x and placed one
   -- footprint depth plus a gap behind the right piece
@@ -256,8 +258,6 @@ else
     min_y = math.min(min_y, p[2])
     max_y = math.max(max_y, p[2])
   end
-  connector = right
-    + left:translate(max_x, -(max_y - min_y + 10), 0)
+  render(right)
+  render(left:translate(max_x, -(max_y - min_y + 10), 0))
 end
-
-render(connector)
