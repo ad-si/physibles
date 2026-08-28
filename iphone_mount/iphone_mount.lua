@@ -6,9 +6,10 @@
 -- 60 degrees and continues as a straight strap. The strap's front face
 -- carries a round dish sized for a MagSafe puck, with a hole through
 -- the strap behind it, and the flat back of the elbow has an obround
--- slot for the cable. Behind the dish the front face is dropped so
--- the phone's camera bump clears the strap. The strap tip is rounded
--- across its width.
+-- slot for the cable. Around the dish the front face is dropped --
+-- behind a chamfer arcing concentrically around it -- so the phone's
+-- camera bump clears the strap. The strap tip is rounded across its
+-- width.
 --
 -- For 3d printing the mount is cut in two at the elbow, along the
 -- miter plane through both sharp corners: the "arm" (strap and dish)
@@ -63,10 +64,10 @@ local dish_radius = 30
 local dish_depth = 10
 local dish_tip_offset = 35 -- Dish center up from the tip, along the face
 local hole_radius = 20 -- Through hole behind the dish, same center
--- Behind the dish the front face is dropped this much, clearing the
--- phone's camera bump; a flat land runs `face_drop_land` past the
--- dish's edge before the stepdown ramps off at `face_drop_angle`, so
--- the full-height rim rings the whole dish with a margin
+-- Around the dish the front face is dropped this much, clearing the
+-- phone's camera bump; a flat land rings the dish `face_drop_land`
+-- wide before the stepdown ramps off radially at `face_drop_angle`,
+-- so a full-height circular rim rings the whole dish with a margin
 local face_drop = 3
 local face_drop_angle = 30 -- Degrees the stepdown ramp leans off the face
 -- Flat between the dish's edge and the ramp, as wide as the
@@ -388,24 +389,27 @@ local tongue_side = miter_frame(
 -- thinner tongue's underside (see `front_shave` below)
 local front_shave_depth = base_height - tongue_thickness
 
--- Dropping the face behind the dish: a slab with a ramped leading
--- edge -- cresting at face height a land's length past the dish's
--- edge, falling at `face_drop_angle` to `face_drop` below --
--- extruded across the width and run out past the cut face,
--- subtracted from the arm part alone so the overshoot cannot nick
--- the elbow wedge
-local drop_edge = dish_tip_offset + dish_radius + face_drop_land -- Ramp crest
+-- Dropping the face around the dish: a slab covering the whole face,
+-- minus a conical boss on the dish's axis -- cresting at face height
+-- on a circle a land's width outside the dish's edge, flaring at
+-- `face_drop_angle` to `face_drop` below -- so the stepdown chamfer
+-- arcs concentrically around the hole. The slab runs out past the
+-- cut face and is subtracted from the arm part alone, so the
+-- overshoot cannot nick the elbow wedge.
+local crest_radius = dish_radius + face_drop_land -- Ramp crest, around the dish
 local drop_run = face_drop / math.tan(math.rad(face_drop_angle))
+local drop_slope = drop_run / face_drop -- Ramp's radial run per unit depth
 local face_drop_cut = strap_frame(
-  polygon { points = {
-    { arm_thickness / 2 + eps, drop_edge },
-    { arm_thickness / 2 + eps, 300 },
-    { arm_thickness / 2 - face_drop, 300 },
-    { arm_thickness / 2 - face_drop, drop_edge + drop_run },
-  } }
-    :linear_extrude(base_width + 2 * eps)
-    :rotate(90, 0, 0)
-    :translate(0, base_width / 2 + eps, 0)
+  cube { { face_drop + eps, base_width + 2, 301 } }
+    :translate(arm_thickness / 2 - face_drop, -base_width / 2 - 1, -1)
+  - cylinder {
+    h = face_drop + 2 * eps,
+    r1 = crest_radius - eps * drop_slope,
+    r2 = crest_radius + drop_run + eps * drop_slope,
+    fn = 180,
+  }
+    :rotate(0, -90, 0)
+    :translate(arm_thickness / 2 + eps, 0, dish_tip_offset)
 )
 
 -- The keys are clipped to the whole mount, so their ends stay flush
