@@ -69,7 +69,7 @@ local hole_radius = 20 -- Through hole behind the dish, same center
 -- wide before the stepdown ramps off radially at `face_drop_angle`,
 -- so a full-height circular rim rings the whole dish with a margin
 local face_drop = 3
-local face_drop_angle = 30 -- Degrees the stepdown ramp leans off the face
+local face_drop_angle = 45 -- Degrees the stepdown ramp leans off the face
 -- Flat between the dish's edge and the ramp, as wide as the
 -- full-height rim the rounded tip leaves around the dish
 local face_drop_land = tip_fillet_radius - dish_radius
