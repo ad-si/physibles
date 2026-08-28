@@ -19,14 +19,13 @@
 -- lower ends -- buried below the front-side surface -- wedging the
 -- keys tight at the end of the slide.
 --
--- Recreated from the FreeCAD model (model.FCStd) in this directory.
 -- The tongue outline and its cross profile are traced from the OEM
 -- connector, hence the odd coordinates.
 --
 -- All measures in mm
 
--- "assembled": as mounted on the TV: the FreeCAD model's coordinates,
---   turned so the tongue points up; both parts joined
+-- "assembled": as mounted on the TV, tongue pointing up; both parts
+--   joined
 -- "print": each part in its print orientation: the arm on the strap's
 --   back (the side the through hole opens to) with the dish facing up
 --   and the dovetail keys climbing the cut face; the connector on the
@@ -50,15 +49,13 @@ local base_height = 14 -- z, also the arm strap's thickness
 --// Arm: a sharp 60 degree elbow off the base's back, then a straight
 --// strap, in the XZ plane, extruded over the full base width
 local arm_sweep = 60 -- Degrees of bend at the elbow
--- Of the FreeCAD model's bend, whose fillets are removed here; sets
--- how far the elbow reaches past the base (`r * tan(arm_sweep / 2)`).
--- Shrunk from the FreeCAD model's 21.5 to pull the elbow in 4 mm.
-local arm_inner_radius = 21.5 - 4 / math.tan(math.rad(arm_sweep / 2))
+-- Places the strap (the bend itself is a sharp miter, not filleted)
+-- and sets how far the elbow reaches past the base
+-- (`r * tan(arm_sweep / 2)`)
+local arm_inner_radius = 14.572
 local arm_thickness = base_height
--- From the end of the FreeCAD model's bend to the tip. The original
--- sketch left this unconstrained; 80.152 is measured from it, plus 47
--- more between the elbow and the dish.
-local strap_length = 80.152 + 47
+-- From the end of the bend to the tip
+local strap_length = 127.152
 local tip_fillet_radius = 34.99 -- Rounds the tip across the width
 
 --// Dish for the MagSafe puck, sunk into the strap's front face
@@ -222,13 +219,12 @@ local function base()
 end
 
 
--- Arm layout in the XZ plane. The strap lies where the FreeCAD
--- model's filleted bend put it: tangent to an `arm_inner_radius` arc
--- springing from the base's bottom back corner and sweeping
--- `arm_sweep`. The fillets themselves are gone: the base's bottom and
--- top planes run straight back and meet the strap's faces in sharp
--- corners. The tip cap runs from the strap's inner to its outer
--- corner, perpendicular to the strap.
+-- Arm layout in the XZ plane. The strap lies tangent to an
+-- `arm_inner_radius` arc springing from the base's bottom back corner
+-- and sweeping `arm_sweep`. The bend is not filleted: the base's
+-- bottom and top planes run straight back and meet the strap's faces
+-- in sharp corners. The tip cap runs from the strap's inner to its
+-- outer corner, perpendicular to the strap.
 local bend_z = -arm_inner_radius
 local cap_angle = math.rad(90 + arm_sweep)
 local down_angle = math.rad(180 + arm_sweep) -- Down along the strap
