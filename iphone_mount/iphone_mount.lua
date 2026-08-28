@@ -259,14 +259,23 @@ end
 
 -- The cable channel, in the strap's frame: an obround prism starting
 -- 50 up from the tip, safely inside the void the hole and dish leave,
--- and running out through the top of the bend
-local function cable_slot()
+-- and running out through the top of the bend. With `open`, the
+-- channel's far side is opened out through the strap's back, so a
+-- cable can be laid in from behind instead of threaded through.
+local function cable_slot(open)
   local slot_reach = math.max(0, slot_length - slot_width) / 2
   local slot_pin = cylinder { h = 200, r = slot_width / 2, fn = 48 }
   local slot = (
     slot_pin:translate(0, slot_reach, 0)
     + slot_pin:translate(0, -slot_reach, 0)
   ):hull()
+  if open then
+    -- From the channel's centerline out past the back face
+    local back_reach = arm_thickness - face_drop - slot_face_depth
+      - slot_width / 2 + 1
+    slot = slot + cube { { back_reach, slot_length, 200 } }
+      :translate(-back_reach, -slot_length / 2, 0)
+  end
   return slot:translate(
     arm_thickness / 2 - face_drop - slot_face_depth - slot_width / 2,
     0,
@@ -418,10 +427,14 @@ local joint_shave = polygon { points = {
   :rotate(90, 0, 0)
   :translate(0, base_width / 2 + eps, 0)
 
+-- The connector's stretch of the cable channel hugs the elbow's back
+-- on its way out through it; opening its far side turns the stretch
+-- into a groove the cable can be laid into after the parts are joined
 local connector_part = (whole * tongue_side)
   - miter_frame(dovetail(dovetail_clearance))
   - front_shave
   - joint_shave
+  - strap_frame(cable_slot(true))
 
 
 local mount
