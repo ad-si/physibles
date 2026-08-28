@@ -66,8 +66,8 @@ local hole_radius = 20 -- Through hole behind the dish, same center
 --// Cable channel: an obround cut parallel to the strap, starting
 --// inside the through hole and running up inside the strap, emerging
 --// through the elbow's flat back. The cable enters it via the hole.
-local slot_length = 13 -- Along y
-local slot_width = 7
+local slot_length = 14 -- Along y
+local slot_width = 8
 local slot_face_depth = 1.5 -- Slot's near side below the front face
 
 --// Dovetails joining the arm to the connector: two keys on the arm's
