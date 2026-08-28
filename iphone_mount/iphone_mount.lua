@@ -50,14 +50,15 @@ local base_height = 14 -- z, also the arm strap's thickness
 --// Arm: a sharp 60 degree elbow off the base's back, then a straight
 --// strap, in the XZ plane, extruded over the full base width
 local arm_sweep = 60 -- Degrees of bend at the elbow
--- Of the FreeCAD model's bend, whose fillets are removed here; kept to
--- place the strap (and thus the tip) where that model had it
-local arm_inner_radius = 21.5
+-- Of the FreeCAD model's bend, whose fillets are removed here; sets
+-- how far the elbow reaches past the base (`r * tan(arm_sweep / 2)`).
+-- Shrunk from the FreeCAD model's 21.5 to pull the elbow in 4 mm.
+local arm_inner_radius = 21.5 - 4 / math.tan(math.rad(arm_sweep / 2))
 local arm_thickness = base_height
 -- From the end of the FreeCAD model's bend to the tip. The original
--- sketch left this unconstrained; 80.152 is measured from it, plus 42
+-- sketch left this unconstrained; 80.152 is measured from it, plus 47
 -- more between the elbow and the dish.
-local strap_length = 80.152 + 42
+local strap_length = 80.152 + 47
 local tip_fillet_radius = 34.99 -- Rounds the tip across the width
 
 --// Dish for the MagSafe puck, sunk into the strap's front face
