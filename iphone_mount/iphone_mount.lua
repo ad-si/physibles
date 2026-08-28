@@ -42,7 +42,7 @@ local tongue_thickness = 12 -- z
 local hook_grow = -0.1
 
 --// Base block joining tongue and arm
-local base_depth = 10 -- x
+local base_depth = 5 -- x
 local base_width = 70 -- y, also the arm's width
 local base_height = 14 -- z, also the arm strap's thickness
 
