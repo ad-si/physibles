@@ -15,8 +15,9 @@
 -- and the "connector" (tongue, base, and elbow wedge). Two dovetail
 -- keys on the arm's cut face run up the face's slope, mirrored about
 -- the middle; they slide into matching sockets in the connector from
--- the elbow's outer side and stop at the sockets' closed lower ends,
--- which stay buried below the front-side surface.
+-- the elbow's outer side. The sockets taper towards their closed
+-- lower ends -- buried below the front-side surface -- wedging the
+-- keys tight at the end of the slide.
 --
 -- Recreated from the FreeCAD model (model.FCStd) in this directory.
 -- The tongue outline and its cross profile are traced from the OEM
@@ -93,7 +94,13 @@ local dovetail_spacing = 35 -- Center distance between the two keys
 -- surface -- shaved down to the tongue's underside -- where the
 -- elbow's wedge runs out.
 local dovetail_span = 2 / 3
-local dovetail_clearance = 0.15 -- Socket is grown this much per side
+-- Socket is grown this much per side at its open end, where the keys
+-- enter
+local dovetail_clearance = 0.15
+-- Towards its closed lower end the socket's flanks taper back in,
+-- ending this far inside the keys' nominal profile, so the slide
+-- starts loose and wedges tight just as the keys bottom out
+local dovetail_pinch = 0.1
 
 local eps = 0.01 -- Used to prevent z-fighting
 
@@ -344,23 +351,33 @@ end
 local dovetail_lift = (1 - dovetail_span) * miter_face
 
 -- The two dovetail key prisms, in the miter frame: the cross profile
--- in the XY plane, extruded up the cut face from `dovetail_lift` and
--- grown by `grow` on every side for the socket's clearance. The
--- extrusion overshoots the outer corner, where the sockets are open
--- for sliding the keys in; their lower ends stay closed and buried,
--- stopping the keys.
-local function dovetail(grow)
-  local half_neck = dovetail_neck / 2 + grow
+-- in the XY plane, run up the cut face from `dovetail_lift` and grown
+-- by `grow` on every side for the socket's clearance. `widen_low`
+-- (defaulting to `grow`) replaces the flanks' widening at the lower
+-- end, tapering the prism between the ends; the flared flanks then
+-- cam the keys onto the cut face as they wedge. The prism overshoots
+-- the outer corner, where the sockets are open for sliding the keys
+-- in; their lower ends stay closed and buried, backstopping the keys.
+local function dovetail(grow, widen_low)
+  widen_low = widen_low or grow
   local depth = dovetail_depth + grow
-  local half_root = half_neck + depth * math.tan(math.rad(dovetail_flare))
-  local key = polygon { points = {
-    { -grow - eps, -half_neck },
-    { depth, -half_root },
-    { depth, half_root },
-    { -grow - eps, half_neck },
-  } }
-    :linear_extrude(miter_face - dovetail_lift + grow + 1)
-    :translate(0, 0, dovetail_lift - grow)
+  local flare = math.tan(math.rad(dovetail_flare))
+  local function section(widen, z)
+    local half_neck = dovetail_neck / 2 + widen
+    local half_root = half_neck + depth * flare
+    return polygon { points = {
+      { -grow - eps, -half_neck },
+      { depth, -half_root },
+      { depth, half_root },
+      { -grow - eps, half_neck },
+    } }
+      :linear_extrude(eps)
+      :translate(0, 0, z)
+  end
+  local key = (
+    section(widen_low, dovetail_lift - grow)
+    + section(grow, miter_face + 1)
+  ):hull()
   return key:translate(0, dovetail_spacing / 2, 0)
     + key:translate(0, -dovetail_spacing / 2, 0)
 end
@@ -431,7 +448,7 @@ local joint_shave = polygon { points = {
 -- on its way out through it; opening its far side turns the stretch
 -- into a groove the cable can be laid into after the parts are joined
 local connector_part = (whole * tongue_side)
-  - miter_frame(dovetail(dovetail_clearance))
+  - miter_frame(dovetail(dovetail_clearance, -dovetail_pinch))
   - front_shave
   - joint_shave
   - strap_frame(cable_slot(true))
