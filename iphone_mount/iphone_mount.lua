@@ -6,7 +6,9 @@
 -- 60 degrees and continues as a straight strap. The strap's front face
 -- carries a round dish sized for a MagSafe puck, with a hole through
 -- the strap behind it, and the flat back of the elbow has an obround
--- slot for the cable. The strap tip is rounded across its width.
+-- slot for the cable. Behind the dish the front face is dropped so
+-- the phone's camera bump clears the strap. The strap tip is rounded
+-- across its width.
 --
 -- For 3d printing the mount is cut in two at the elbow, along the
 -- miter plane through both sharp corners: the "arm" (strap and dish)
@@ -62,13 +64,22 @@ local dish_radius = 30
 local dish_depth = 10
 local dish_tip_offset = 35 -- Dish center up from the tip, along the face
 local hole_radius = 20 -- Through hole behind the dish, same center
+-- Behind the dish the front face is dropped this much, clearing the
+-- phone's camera bump; a flat land runs `face_drop_land` past the
+-- dish's edge before the stepdown ramps off at `face_drop_angle`, so
+-- the full-height rim rings the whole dish with a margin
+local face_drop = 3
+local face_drop_angle = 30 -- Degrees the stepdown ramp leans off the face
+-- Flat between the dish's edge and the ramp, as wide as the
+-- full-height rim the rounded tip leaves around the dish
+local face_drop_land = tip_fillet_radius - dish_radius
 
 --// Cable channel: an obround cut parallel to the strap, starting
 --// inside the through hole and running up inside the strap, emerging
 --// through the elbow's flat back. The cable enters it via the hole.
 local slot_length = 14 -- Along y
 local slot_width = 8
-local slot_face_depth = 1.5 -- Slot's near side below the front face
+local slot_face_depth = 1.5 -- Slot's near side below the dropped front face
 
 --// Dovetails joining the arm to the connector: two keys on the arm's
 --// cut face, running along the face's slope, mirrored about the middle
@@ -77,9 +88,10 @@ local dovetail_neck = 9 -- Key width at the cut face
 local dovetail_flare = 12 -- Degrees each flank leans outward
 local dovetail_spacing = 35 -- Center distance between the two keys
 -- Fraction of the thickness the keys span, measured from the elbow's
--- back. What the remaining fraction leaves in front of the keys'
--- lower ends must exceed depth plus clearance, or the sockets break
--- through the front-side surface where the elbow's wedge runs out.
+-- back. The keys' lower ends must stay far enough up the cut face
+-- that the sockets' closed ends stay buried below the front-side
+-- surface -- shaved down to the tongue's underside -- where the
+-- elbow's wedge runs out.
 local dovetail_span = 2 / 3
 local dovetail_clearance = 0.15 -- Socket is grown this much per side
 
@@ -245,6 +257,23 @@ local function strap_frame(solid)
     :translate(tip_mid_x, 0, tip_mid_z)
 end
 
+-- The cable channel, in the strap's frame: an obround prism starting
+-- 50 up from the tip, safely inside the void the hole and dish leave,
+-- and running out through the top of the bend
+local function cable_slot()
+  local slot_reach = math.max(0, slot_length - slot_width) / 2
+  local slot_pin = cylinder { h = 200, r = slot_width / 2, fn = 48 }
+  local slot = (
+    slot_pin:translate(0, slot_reach, 0)
+    + slot_pin:translate(0, -slot_reach, 0)
+  ):hull()
+  return slot:translate(
+    arm_thickness / 2 - face_drop - slot_face_depth - slot_width / 2,
+    0,
+    50
+  )
+end
+
 local function arm()
   local half = arm_thickness / 2
 
@@ -265,17 +294,6 @@ local function arm()
     :rotate(0, -90, 0)
     :translate(half + eps, 0, dish_tip_offset)
 
-  -- The channel starts 50 up from the tip, safely inside the void the
-  -- hole and dish leave, and runs out through the top of the bend
-  local slot_reach = math.max(0, slot_length - slot_width) / 2
-  local slot_pin = cylinder { h = 200, r = slot_width / 2, fn = 48 }
-  local slot = (
-    slot_pin:translate(0, slot_reach, 0)
-    + slot_pin:translate(0, -slot_reach, 0)
-  )
-    :hull()
-    :translate(half - slot_face_depth - slot_width / 2, 0, 50)
-
   -- Rounding the tip: at each side, cut the corner between the tip cap
   -- and the side face down to a cylinder tangent to both
   local function tip_corner(side)
@@ -292,7 +310,7 @@ local function arm()
   return body
     - strap_frame(dish)
     - strap_frame(hole)
-    - strap_frame(slot)
+    - strap_frame(cable_slot())
     - strap_frame(tip_corner(1))
     - strap_frame(tip_corner(-1))
 end
@@ -343,11 +361,67 @@ local tongue_side = miter_frame(
   cube { { 300, 200, 400 } }:translate(0, -100, -200)
 )
 
+-- The connector's front-side face is shaved this deep, flush with the
+-- thinner tongue's underside (see `front_shave` below)
+local front_shave_depth = base_height - tongue_thickness
+
+-- Dropping the face behind the dish: a slab with a ramped leading
+-- edge -- cresting at face height a land's length past the dish's
+-- edge, falling at `face_drop_angle` to `face_drop` below --
+-- extruded across the width and run out past the cut face,
+-- subtracted from the arm part alone so the overshoot cannot nick
+-- the elbow wedge
+local drop_edge = dish_tip_offset + dish_radius + face_drop_land -- Ramp crest
+local drop_run = face_drop / math.tan(math.rad(face_drop_angle))
+local face_drop_cut = strap_frame(
+  polygon { points = {
+    { arm_thickness / 2 + eps, drop_edge },
+    { arm_thickness / 2 + eps, 300 },
+    { arm_thickness / 2 - face_drop, 300 },
+    { arm_thickness / 2 - face_drop, drop_edge + drop_run },
+  } }
+    :linear_extrude(base_width + 2 * eps)
+    :rotate(90, 0, 0)
+    :translate(0, base_width / 2 + eps, 0)
+)
+
 -- The keys are clipped to the whole mount, so their ends stay flush
 -- with its outer faces
-local arm_part = (whole - tongue_side) + (miter_frame(dovetail(0)) * whole)
+local arm_part = (whole - tongue_side) - face_drop_cut
+  + (miter_frame(dovetail(0)) * whole)
+-- The base is thicker than the tongue, so the connector's flipped
+-- print would step down where the tongue begins; shave the front-side
+-- face (the print's top) flush with the tongue's underside. The slab
+-- overshoots the miter plane, where the part is void anyway.
+local front_shave = cube { {
+  72,
+  base_width + 2 * eps,
+  front_shave_depth + eps,
+} }
+  :translate(-60, -base_width / 2 - eps, -eps)
+
+-- The arm's face drop is deeper than the front shave, so the parts
+-- would meet at different thicknesses; the base's and wedge's face
+-- steps down once more -- ramped at the same angle, cresting halfway
+-- across the base's underside -- so both parts share the same
+-- thickness at the dovetail connection
+local joint_drop = face_drop - front_shave_depth
+local joint_run = joint_drop / math.tan(math.rad(face_drop_angle))
+local joint_crest = back_x + base_depth / 2
+local joint_shave = polygon { points = {
+  { joint_crest, front_shave_depth - eps },
+  { joint_crest - joint_run, front_shave_depth + joint_drop },
+  { -60, front_shave_depth + joint_drop },
+  { -60, front_shave_depth - eps },
+} }
+  :linear_extrude(base_width + 2 * eps)
+  :rotate(90, 0, 0)
+  :translate(0, base_width / 2 + eps, 0)
+
 local connector_part = (whole * tongue_side)
   - miter_frame(dovetail(dovetail_clearance))
+  - front_shave
+  - joint_shave
 
 
 local mount
