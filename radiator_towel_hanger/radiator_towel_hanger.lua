@@ -22,8 +22,14 @@
 local rod_diameter = var("Rod diameter", 15) -- 20 mm for the thick-rod variant
 local rod_fit = 0.2 -- The rod only has to slide, not turn
 local hole_cap = 2 -- Closes the outer face over the rod's end
-local ring_wall = 3.9
+-- The strut's tangencies were drawn against the default rod's 11.5 mm ring,
+-- and a smaller ring pulls clear of the strut's outer edge entirely. So
+-- thinner rods keep that outer radius and just grow the wall; only thicker
+-- rods grow the ring.
+local min_ring_wall = 3.9
+local min_ring_radius = 11.5
 local rod_hole_radius = (rod_diameter + rod_fit) / 2
+local ring_wall = math.max(min_ring_wall, min_ring_radius - rod_hole_radius)
 local ring_radius = rod_hole_radius + ring_wall
 -- Rod axis: far enough forward that a folded towel clears the panel,
 -- and low enough that the towel hangs below the top grill's airflow
