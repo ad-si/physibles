@@ -15,10 +15,13 @@
 -- face meets its top surface, so every dimension below is measured against one
 -- of the two surfaces the bracket actually registers on.
 
--- Rod and ring. The hole is a plain through hole, not a snap-in C, so the rod
--- is threaded through the hangers before it goes up.
+-- Rod and ring. The hole is not a snap-in C, so the rod is threaded through
+-- the hangers before the pair goes up. Each hanger's outer face is closed by
+-- a thin cap, so a hollow rod does not show its open end - which also makes
+-- the two hangers mirror images of each other.
 local rod_diameter = var("Rod diameter", 15) -- 20 mm for the thick-rod variant
 local rod_fit = 0.2 -- The rod only has to slide, not turn
+local hole_cap = 2 -- Closes the outer face over the rod's end
 local ring_wall = 3.9
 local rod_hole_radius = (rod_diameter + rod_fit) / 2
 local ring_radius = rod_hole_radius + ring_wall
@@ -108,6 +111,10 @@ local strut_window_radius = strut_radius + strut_thickness / 2
 local strut_outer_radius = strut_radius - strut_thickness / 2
 
 assert(prong_wall >= 2, "each prong must be thick enough to print and to bend")
+assert(
+  hole_cap < part_width / 3,
+  "the cap must stay a cap: most of the width has to remain bore for the rod"
+)
 assert(ring_wall >= 3, "the ring has to carry the whole towel load in tension")
 assert(
   rod_reach - ring_radius > band,
@@ -268,11 +275,6 @@ assert(
 -- is the whole reason they are built this way: a fillet added as its own patch
 -- has to land on a tangency, and no boolean can do that cleanly - it either
 -- steps off the face it meets or smears into it for half a millimetre.
-
-local function disc(center, radius, segments)
-  return circle({ r = radius, segments = segments })
-    :translate(center[1], center[2], 0)
-end
 
 -- Points along a circle from one of its points to another. `direction` forces
 -- the sweep to run one way round, 1 anticlockwise and -1 clockwise; left out,
@@ -529,6 +531,12 @@ end
 -- The slot is cut afterwards and so keeps square edges, on purpose. Printed
 -- flat, its far wall is bridged across the gap, and a bridge starts better
 -- off a square edge than off a slope.
+--
+-- The rod hole is also cut afterwards, because it no longer goes through: it
+-- stops hole_cap short of the first-layer face. That closed face caps the
+-- rod's end and sits on the bed, so the blind end is solid layers, never a
+-- bridge. The open rim gets its edge break back from a cone cut at the same
+-- 45 degrees as the Minkowski bevel.
 local function hanger()
   local bevel = cylinder({
     r1 = edge_chamfer, r2 = chamfer_tip, h = edge_chamfer,
@@ -537,25 +545,44 @@ local function hanger()
     r1 = chamfer_tip, r2 = edge_chamfer, h = edge_chamfer,
     segments = chamfer_segments,
   }):translate(0, 0, -edge_chamfer)
-  local solid = (
-    hanger_outline()
-    - window_outline()
-    - disc(rod_center, rod_hole_radius, hole_segments)
-  )
+  local solid = (hanger_outline() - window_outline())
     :offset(-edge_chamfer)
     :linear_extrude({ h = part_width - 2 * edge_chamfer, center = true })
     :minkowski(bevel)
 
+  local bore = cylinder({
+    r = rod_hole_radius, h = part_width, segments = hole_segments,
+  }):translate(rod_center[1], rod_center[2], hole_cap - part_width / 2)
+  local bore_rim = cylinder({
+    r1 = rod_hole_radius,
+    r2 = rod_hole_radius + 2 * edge_chamfer,
+    h = 2 * edge_chamfer,
+    segments = hole_segments,
+  }):translate(rod_center[1], rod_center[2], part_width / 2 - edge_chamfer)
+
   -- Split the prongs: the grill bar runs up this slot until it meets the roof
   local slot = prong_slot():linear_extrude({ h = prong_gap, center = true })
-  return solid - slot
+  return solid - bore - bore_rim - slot
 end
 
--- Printed lying on its side, which is how the profile was drawn
-render(
-  hanger()
+-- Printed lying on its side, which is how the profile was drawn. The rod
+-- needs a cap on each end, so the second hanger is the first one's mirror
+-- image. It is mirrored across the profile's horizontal axis, not across the
+-- width, so its cap face also lands on the print bed.
+local function placed(solid, name)
+  return solid
     :translate(0, 0, part_width / 2)
     :color("white")
     :material("plastic", { roughness = 0.35 })
-    :name("radiator_towel_hanger")
+    :name(name)
+end
+
+-- The pair sits one behind the other: the mirrored profile reaches down to
+-- -nose_top, so this lifts it one gap clear of the first one's top edge
+local gap = 15
+
+render(placed(hanger(), "radiator_towel_hanger_right"))
+render(
+  placed(hanger():mirror(0, 1, 0), "radiator_towel_hanger_left")
+    :translate(0, 2 * nose_top + gap, 0)
 )
