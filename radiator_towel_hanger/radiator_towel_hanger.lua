@@ -19,7 +19,7 @@
 -- the hangers before the pair goes up. Each hanger's outer face is closed by
 -- a thin cap, so a hollow rod does not show its open end - which also makes
 -- the two hangers mirror images of each other.
-local rod_diameter = var("Rod diameter", 15) -- 20 mm for the thick-rod variant
+local rod_diameter = var("Rod diameter", 12)
 local rod_fit = 0.2 -- The rod only has to slide, not turn
 local hole_cap = 2 -- Closes the outer face over the rod's end
 -- The strut's tangencies were drawn against the default rod's 11.5 mm ring,
