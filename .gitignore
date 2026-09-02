@@ -1,2 +1,7 @@
 ﻿*.FCBak
 _*
+
+# Intermediates of the `render` makefile target
+# (build/ also holds tracked STLs, so only ignore the render's own files)
+**/build/render.stl
+**/build/render.lua
